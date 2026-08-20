@@ -365,6 +365,7 @@ var API_URL="https://script.google.com/macros/s/AKfycbzNTvJoZIh1CSnN54d0TJb5a29j
 </script>
 <script>
 var SESSION=null, SPEC=null, RECORDS=[], filters={q:'',grade:'all',colorMin:'',colorMax:'',maMin:'',maMax:''};
+function cleanRef(r){for(var k in r){if(typeof r[k]==='string'&&/^#/.test(r[k]))r[k]='';}return r;}
 var pendingRole=null, pinBuf='', currentRoleView='warehouse';
 function $(id){return document.getElementById(id);}
 
@@ -448,14 +449,13 @@ var lastFetch=0;
 function ensureData(after,targetEl){
   var had=RECORDS.length>0;
   if(!had){
-    try{var c=localStorage.getItem('ifind_cache');if(c){var o=JSON.parse(c);SPEC=o.spec;RECORDS=(o.rows||[]).map(function(r){if(r.grade&&/^#/.test(r.grade))r.grade='';return r;});had=true;}}catch(e){}
+    try{var c=localStorage.getItem('ifind_cache');if(c){var o=JSON.parse(c);SPEC=o.spec;RECORDS=(o.rows||[]).map(cleanRef);had=true;}}catch(e){}
   }
   if(had){ after(); }
   else if(targetEl){ $(targetEl).innerHTML='<div class="loading">กำลังโหลดข้อมูล…</div>'; }
   if(had && Date.now()-lastFetch<15000) return;   // ข้อมูลสดอยู่แล้ว ไม่ต้องยิงซ้ำ
   google.script.run.withSuccessHandler(function(res){
-    lastFetch=Date.now(); SPEC=res.spec; RECORDS=res.rows.map(function(r){
-      if(r.grade&&/^#/.test(r.grade))r.grade='';return r;});
+    lastFetch=Date.now(); SPEC=res.spec; RECORDS=res.rows.map(cleanRef);
     try{localStorage.setItem('ifind_cache',JSON.stringify({spec:SPEC,rows:RECORDS}));}catch(e){}
     after();
   }).withFailureHandler(function(e){
