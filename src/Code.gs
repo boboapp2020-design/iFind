@@ -159,16 +159,15 @@ function saveQC(pin, rec){
   return {ok:true};
 }
 
-/* คลัง: แก้ตำแหน่งเก็บ + จำนวนคงเหลือ */
+/* คลัง: แก้ตำแหน่งเก็บ + จำนวนคงเหลือ (ไม่ต้องใช้ PIN — คลังเข้าได้เลย) */
 function saveStock(pin, lot, location, qtyTon, bags){
-  var u = requireRole(pin, 'warehouse');
   var sh = ss().getSheetByName(DATA_SHEET);
   var rowIdx = findRowByLot(sh, lot);
   if (rowIdx < 1) throw new Error('ไม่พบ Lot: '+lot);
   sh.getRange(rowIdx,COL.location).setValue(location||'');
   sh.getRange(rowIdx,COL.qtyTon).setValue(numOrBlank(qtyTon));
   sh.getRange(rowIdx,COL.bags).setValue(numOrBlank(bags));
-  sh.getRange(rowIdx,COL.updatedBy).setValue(u.label);
+  sh.getRange(rowIdx,COL.updatedBy).setValue('คลังสินค้า');
   sh.getRange(rowIdx,COL.updatedAt).setValue(new Date());
   return {ok:true};
 }
