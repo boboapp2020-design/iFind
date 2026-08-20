@@ -1,0 +1,15 @@
+# clasp — มี scriptId ส่วนตัว อย่า commit
+.clasp.json
+
+# node
+node_modules/
+npm-debug.log*
+
+# ข้อมูลลับ/ไฟล์ใหญ่ (COA จริง)
+data/
+*.xlsx
+~$*
+
+# ระบบ
+.DS_Store
+Thumbs.db
