@@ -110,9 +110,10 @@ input,select{font-family:var(--ff)}
 .swatch.gic{border:0;background:transparent;object-fit:contain}
 .card .strike{font-family:var(--fm);font-weight:600;font-size:15px} .card .lot{font-size:11px;color:var(--text-2);font-family:var(--fm)}
 .grade{margin-left:auto;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:6px;background:var(--surface-2);color:var(--text-2);border:1px solid var(--border)}
-.metrics{display:flex;gap:15px;margin-top:11px;padding-top:11px;border-top:1px solid var(--border)}
-.metric .k{font-size:10px;color:var(--text-3);display:block} .metric .v{font-family:var(--fm);font-size:14.5px;font-weight:600}
+.metrics{display:flex;flex-wrap:wrap;gap:8px 14px;margin-top:11px;padding-top:11px;border-top:1px solid var(--border)}
+.metric .k{font-size:10px;color:var(--text-3);display:block} .metric .v{font-family:var(--fm);font-size:13.5px;font-weight:600}
 .metric .v small{font-size:10px;color:var(--text-3);font-weight:400}
+.card-time{font-size:11px;color:var(--text-3);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
 .pill{font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px;margin-left:auto;align-self:center;display:inline-flex;gap:5px;align-items:center}
 .pill.pass{color:var(--pass);background:var(--pass-bg);border:1px solid var(--pass-line)}
 .pill.warn{color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-line)}
@@ -559,9 +560,15 @@ function cardHTML(r){var st=statusOf(r);
     '<div class="strike">'+esc(r.lot)+'</div><div class="lot">'+(r.customer?esc(r.customer):'เกรด '+esc(r.grade))+'</div></div>'+
     '<span class="grade">'+esc(r.grade||'-')+'</span></div><div class="metrics">'+
     '<div class="metric"><span class="k">สี ICU</span><span class="v">'+fmt(r.color)+'</span></div>'+
+    '<div class="metric"><span class="k">Pol</span><span class="v">'+fmt(r.pol)+'<small>%</small></span></div>'+
+    '<div class="metric"><span class="k">ชื้น</span><span class="v">'+fmt(r.moist)+'<small>%</small></span></div>'+
+    '<div class="metric"><span class="k">Invert</span><span class="v">'+fmt(r.invert)+'<small>%</small></span></div>'+
     '<div class="metric"><span class="k">M.A.</span><span class="v">'+fmt(r.ma)+'<small>mm</small></span></div>'+
+    '<div class="metric"><span class="k">Ash</span><span class="v">'+fmt(r.ash)+'</span></div>'+
     '<div class="metric"><span class="k">คงเหลือ</span><span class="v">'+(r.qtyTon!==''?fmt(r.qtyTon)+'<small>ต.</small>':'–')+'</span></div>'+
-    '<span class="pill '+(st||'warn')+'"><span class="d"></span>'+STL[st]+'</span></div></div>';
+    '<span class="pill '+(st||'warn')+'"><span class="d"></span>'+STL[st]+'</span></div>'+
+    (r.updatedAt?'<div class="card-time">แก้ไข '+esc(r.updatedAt)+(r.updatedBy?' · '+esc(r.updatedBy):'')+'</div>':'')+
+    '</div>';
 }
 function renderQC(){
   var q=(filters.q||'').trim().toLowerCase();
