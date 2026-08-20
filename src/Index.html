@@ -324,7 +324,7 @@ function enterRole(role){
   openPin('qc');
 }
 function openPin(role){
-  pendingRole=role;pinBuf='';var qc=role==='qc';var keys=[1,2,3,4,5,6,7,8,9,'del',0,'ok'];
+  pendingRole=role;pinBuf='';var qc=role==='qc';var keys=[1,2,3,4,5,6,7,8,9,'',0,''];
   $('pinPanel').innerHTML='<div class="grab"></div><button class="sheetx" onclick="closePin()">✕</button>'+
     '<div class="pintitle"><div class="rico '+(qc?'qc':'wh')+'">'+(qc?
       '<svg viewBox="0 0 24 24" width="26" fill="none" stroke="#fff" stroke-width="1.9"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="m8.5 12 2 2 3.5-4"/></svg>':
@@ -332,13 +332,12 @@ function openPin(role){
     '</div><b>'+(qc?'บันทึกค่าคุณภาพ (QC)':'ค้นหาสินค้า (คลัง)')+'</b><small>ใส่ PIN เพื่อดำเนินการต่อ</small></div>'+
     '<div class="pindots" id="pinDots"></div><div class="pinerr" id="pinErr"></div>'+
     '<div class="keypad">'+keys.map(function(k){
-      if(k==='del')return '<button class="key act" onclick="pinKey(\'del\')">ลบ</button>';
-      if(k==='ok')return '<button class="key act" onclick="pinKey(\'ok\')" style="color:var(--blue)">ตกลง</button>';
+      if(k==='')return '<span></span>';
       return '<button class="key" onclick="pinKey('+k+')">'+k+'</button>';
     }).join('')+'</div>';
   drawDots();$('pinSheet').classList.add('open');
 }
-function pinKey(k){ if(k==='del'){pinBuf=pinBuf.slice(0,-1);} else if(k==='ok'){submitPin();return;} else if(pinBuf.length<4){pinBuf+=k;} drawDots(); }
+function pinKey(k){ if(pinBuf.length<4){pinBuf+=k;} drawDots(); if(pinBuf.length===4){submitPin();} }
 function drawDots(){var n=Math.max(4,pinBuf.length),h='';for(var i=0;i<n;i++)h+='<i class="'+(i<pinBuf.length?'f':'')+'"></i>';$('pinDots').innerHTML=h;}
 function submitPin(){
   if(!pinBuf)return;$('pinErr').textContent='กำลังตรวจสอบ…';
