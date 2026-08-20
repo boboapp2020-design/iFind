@@ -206,6 +206,15 @@ input,select{font-family:var(--ff)}
 .toast{position:fixed;left:50%;transform:translateX(-50%) translateY(12px);bottom:96px;background:var(--pass);color:#fff;font-size:13px;font-weight:600;padding:10px 18px;border-radius:999px;opacity:0;transition:.25s;z-index:60}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)} .toast.err{background:var(--fail)}
 </style>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#F3ECDD">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="iFind">
 </head>
 <body>
 <div class="app">
@@ -328,10 +337,10 @@ input,select{font-family:var(--ff)}
 <div class="sheet" id="pinSheet" onclick="if(event.target===this)closePin()"><div class="panel" id="pinPanel"></div></div>
 <div class="toast" id="toast"></div>
 
-<link rel="manifest" href="manifest.json"><link rel="icon" type="image/png" sizes="192x192" href="icon-192.png"><link rel="icon" type="image/png" sizes="512x512" href="icon-512.png"><link rel="apple-touch-icon" href="icon-192.png">
-<meta name="theme-color" content="#F3ECDD">
-<meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="iFind">
+
+
+
+
 <script>
 var API_URL="https://script.google.com/macros/s/AKfycbzNTvJoZIh1CSnN54d0TJb5a29j69sIGbGuZ1BNVmKDzTURRWVh3xGWc0NIaIAzNR0i/exec";
 (function(){
