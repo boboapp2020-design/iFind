@@ -112,6 +112,7 @@ function scanValueAfter(V, re){
 function normGrade(raw, name){
   var t = (String(raw)+' '+String(name)).toLowerCase();
   if (t.indexOf('white') >= 0) return 'White';
+  if (t.indexOf('vhp') >= 0)   return 'VHP';
   if (t.indexOf('dcr') >= 0)   return 'DCR';
   raw = String(raw).replace(/sugar/i,'').trim();
   return raw || '';
