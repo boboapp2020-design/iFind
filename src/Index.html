@@ -23,15 +23,7 @@
   --shadow:0 1px 2px rgba(60,44,20,.05),0 8px 24px rgba(60,44,20,.07);
   --ff:"IBM Plex Sans Thai",system-ui,sans-serif; --fm:"IBM Plex Mono",monospace;
 }
-@media (prefers-color-scheme:dark){:root{
-  --bg:#141009; --surface:#201A11; --surface-2:#282116;
-  --border:#362C1D; --border-strong:#493C27; --text:#F2EADB; --text-2:#B3A488; --text-3:#82755C;
-  --blue:#5B9BF0; --blue-2:#3D7BD6; --blue-soft:#16233A;
-  --amber:#E2A452; --amber-2:#EAB877; --amber-soft:#2E2413;
-  --pass:#63BE93; --pass-bg:#1B2C22; --pass-line:#2F5340;
-  --warn:#E0B24E; --warn-bg:#2E2717; --warn-line:#574B2C;
-  --fail:#E28168; --fail-bg:#2E1C17; --fail-line:#573328;
-}}
+
 *{box-sizing:border-box}
 html,body{margin:0;height:100%}
 body{background:var(--bg);color:var(--text);font-family:var(--ff);line-height:1.5;-webkit-font-smoothing:antialiased}
@@ -442,7 +434,7 @@ function enterRole(role){
   openPin('qc');
 }
 function openPin(role){
-  pendingRole=role;pinBuf='';var qc=role==='qc';var keys=[1,2,3,4,5,6,7,8,9,'',0,''];
+  pendingRole=role;pinBuf='';var qc=role==='qc';var keys=[1,2,3,4,5,6,7,8,9,'',0,'del'];
   $('pinPanel').innerHTML='<div class="grab"></div><button class="sheetx" onclick="closePin()">✕</button>'+
     '<div class="pintitle"><div class="rico '+(qc?'qc':'wh')+'">'+(qc?
       '<svg viewBox="0 0 24 24" width="26" fill="none" stroke="#fff" stroke-width="1.9"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1"/><path d="m8.5 12 2 2 3.5-4"/></svg>':
@@ -451,11 +443,12 @@ function openPin(role){
     '<div class="pindots" id="pinDots"></div><div class="pinerr" id="pinErr"></div>'+
     '<div class="keypad">'+keys.map(function(k){
       if(k==='')return '<span></span>';
+      if(k==='del')return '<button class="key act" onclick="pinKey(\'del\')" aria-label="ลบ" style="font-size:24px">⌫</button>';
       return '<button class="key" onclick="pinKey('+k+')">'+k+'</button>';
     }).join('')+'</div>';
   drawDots();$('pinSheet').classList.add('open');
 }
-function pinKey(k){ if(pinBuf.length<4){pinBuf+=k;} drawDots(); if(pinBuf.length===4){submitPin();} }
+function pinKey(k){ if(k==='del'){pinBuf=pinBuf.slice(0,-1);drawDots();return;} if(pinBuf.length<4){pinBuf+=k;} drawDots(); if(pinBuf.length===4){submitPin();} }
 function drawDots(){var n=Math.max(4,pinBuf.length),h='';for(var i=0;i<n;i++)h+='<i class="'+(i<pinBuf.length?'f':'')+'"></i>';$('pinDots').innerHTML=h;}
 function submitPin(){
   if(!pinBuf)return;$('pinErr').textContent='กำลังตรวจสอบ…';
