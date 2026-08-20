@@ -354,7 +354,7 @@ input,select{font-family:var(--ff)}
 })();
 </script>
 <script>
-var SESSION=null, SPEC=null, RECORDS=[], filters={q:'',grade:'all',maxColor:'',minPol:''};
+var SESSION=null, SPEC=null, RECORDS=[], filters={q:'',grade:'all',colorMin:'',colorMax:'',maMin:'',maMax:''};
 var pendingRole=null, pinBuf='', currentRoleView='warehouse';
 function $(id){return document.getElementById(id);}
 
@@ -498,7 +498,7 @@ function startRole(role){
   $('whoName').textContent=role==='qc'?'บันทึกค่าคุณภาพ':'ค้นหาสินค้า';$('whoDesc').textContent=SESSION.label;
   $('roleBadge').className='badge '+(role==='qc'?'edit':'view');$('roleBadge').textContent=role==='qc'?'แก้ไขได้':'อ่าน + สต๊อก';
   $('fab').style.display=role==='qc'?'flex':'none';
-  filters={q:'',grade:'all',maxColor:'',minPol:''};currentRoleView=role;loadData();
+  filters={q:'',grade:'all',colorMin:'',colorMax:'',maMin:'',maMax:''};currentRoleView=role;loadData();
 }
 function loadData(){ ensureData(render,'body'); }
 function render(){ currentRoleView==='qc'?renderQC():renderWarehouse(); }
@@ -518,19 +518,23 @@ var STL={pass:'ผ่านสเปก',warn:'เฝ้าระวัง',fail
 function renderWarehouse(){
   var q=filters.q.trim().toLowerCase();
   var rows=RECORDS.filter(function(r){
-    if(q&&r.lot.toLowerCase().indexOf(q)<0)return false;
+    if(q&&String(r.lot).toLowerCase().indexOf(q)!==0)return false;   // ค้นแบบขึ้นต้นด้วย
     if(filters.grade!=='all'&&r.grade!==filters.grade)return false;
-    if(filters.maxColor!==''&&!(r.color!==''&&+r.color<=+filters.maxColor))return false;
-    if(filters.minPol!==''&&!(r.pol!==''&&+r.pol>=+filters.minPol))return false;
+    if(filters.colorMin!==''&&!(r.color!==''&&+r.color>=+filters.colorMin))return false;
+    if(filters.colorMax!==''&&!(r.color!==''&&+r.color<=+filters.colorMax))return false;
+    if(filters.maMin!==''&&!(r.ma!==''&&+r.ma>=+filters.maMin))return false;
+    if(filters.maMax!==''&&!(r.ma!==''&&+r.ma<=+filters.maMax))return false;
     return true;
   }).sort(function(a,b){return(+a.color||9e9)-(+b.color||9e9);});
   $('body').innerHTML=
     '<div class="searchbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>'+
     '<input id="q" placeholder="ค้นหาเลข Lot (Strike)…" value="'+esc(filters.q)+'" oninput="filters.q=this.value;renderWarehouse();focusId(\'q\')"></div>'+
     '<div class="chips">'+['all','DCR','VHP','White'].map(function(g){return '<span class="chip" aria-pressed="'+(filters.grade===g)+'" onclick="filters.grade=\''+g+'\';renderWarehouse()">'+(g==='all'?'ทั้งหมด':g)+'</span>';}).join('')+'</div>'+
-    '<div class="advanced"><div class="atitle">◆ ค้นหาค่าที่เหมาะสม</div><div class="arow">'+
-      '<div class="field"><label>สีไม่เกิน (ICU)</label><input inputmode="numeric" value="'+esc(filters.maxColor)+'" oninput="filters.maxColor=this.value;renderWarehouse();focusAdv(0)" placeholder="เช่น 700"></div>'+
-      '<div class="field"><label>Pol ไม่ต่ำกว่า (%)</label><input inputmode="decimal" value="'+esc(filters.minPol)+'" oninput="filters.minPol=this.value;renderWarehouse();focusAdv(1)" placeholder="เช่น 99.5"></div>'+
+    '<div class="advanced"><div class="atitle">◆ ค้นหาค่าที่เหมาะสม (ระบุเป็นช่วง)</div><div class="arow">'+
+      '<div class="field"><label>สีต่ำสุด (ICU)</label><input inputmode="numeric" value="'+esc(filters.colorMin)+'" oninput="filters.colorMin=this.value;renderWarehouse();focusAdv(0)" placeholder="เช่น 300"></div>'+
+      '<div class="field"><label>สีสูงสุด (ICU)</label><input inputmode="numeric" value="'+esc(filters.colorMax)+'" oninput="filters.colorMax=this.value;renderWarehouse();focusAdv(1)" placeholder="เช่น 700"></div>'+
+      '<div class="field"><label>M.A. ต่ำสุด (mm)</label><input inputmode="decimal" value="'+esc(filters.maMin)+'" oninput="filters.maMin=this.value;renderWarehouse();focusAdv(2)" placeholder="เช่น 0.80"></div>'+
+      '<div class="field"><label>M.A. สูงสุด (mm)</label><input inputmode="decimal" value="'+esc(filters.maMax)+'" oninput="filters.maMax=this.value;renderWarehouse();focusAdv(3)" placeholder="เช่น 1.10"></div>'+
     '</div></div>'+
     '<div class="listhead"><b>ผลการค้นหา</b><small>'+rows.length+' รายการ · เรียงตามค่าสี</small></div>'+
     (rows.length?rows.map(cardHTML).join(''):'<div class="empty">ไม่พบน้ำตาลที่ตรงเงื่อนไข</div>');
@@ -541,13 +545,13 @@ function cardHTML(r){var st=statusOf(r);
     '<div class="strike">'+esc(r.lot)+'</div><div class="lot">'+(r.customer?esc(r.customer):'เกรด '+esc(r.grade))+'</div></div>'+
     '<span class="grade">'+esc(r.grade||'-')+'</span></div><div class="metrics">'+
     '<div class="metric"><span class="k">สี ICU</span><span class="v">'+fmt(r.color)+'</span></div>'+
-    '<div class="metric"><span class="k">Pol</span><span class="v">'+fmt(r.pol)+'<small>%</small></span></div>'+
+    '<div class="metric"><span class="k">M.A.</span><span class="v">'+fmt(r.ma)+'<small>mm</small></span></div>'+
     '<div class="metric"><span class="k">คงเหลือ</span><span class="v">'+(r.qtyTon!==''?fmt(r.qtyTon)+'<small>ต.</small>':'–')+'</span></div>'+
     '<span class="pill '+(st||'warn')+'"><span class="d"></span>'+STL[st]+'</span></div></div>';
 }
 function renderQC(){
   var q=(filters.q||'').trim().toLowerCase();
-  var rows=RECORDS.filter(function(r){return !q||r.lot.toLowerCase().indexOf(q)>=0;});
+  var rows=RECORDS.filter(function(r){return !q||String(r.lot).toLowerCase().indexOf(q)===0;});
   $('body').innerHTML=
     '<div class="searchbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>'+
     '<input id="q" placeholder="ค้นหา Lot ที่จะแก้ไข…" value="'+esc(filters.q)+'" oninput="filters.q=this.value;renderQC();focusId(\'q\')"></div>'+
