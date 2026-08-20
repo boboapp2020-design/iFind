@@ -38,7 +38,10 @@ var SPEC_DEFAULT = {
 /* =================================================================
  *  WEB APP ENTRY
  * ================================================================= */
-function doGet() {
+function doGet(e) {
+  // เรียกแบบ API (JSONP) จาก PWA บน GitHub Pages
+  if (e && e.parameter && e.parameter.api) return apiHandler(e);
+  // เปิดหน้าเว็บปกติ (ในตัว Apps Script)
   return HtmlService.createTemplateFromFile('Index')
     .evaluate()
     .setTitle('iFind — ค่าสีน้ำตาล Mitr Lao')
@@ -46,6 +49,21 @@ function doGet() {
     .setFaviconUrl('https://ssl.gstatic.com/docs/spreadsheets/favicon3.ico');
 }
 function include(name){ return HtmlService.createHtmlOutputFromFile(name).getContent(); }
+
+/* ---------- JSONP API (สำหรับ PWA ข้ามโดเมน) ---------- */
+function apiHandler(e){
+  var p = e.parameter, action = p.api, cb = p.callback || 'callback', out;
+  try {
+    if      (action === 'getRecords')    out = getRecords();
+    else if (action === 'getLatestInfo') out = getLatestInfo();
+    else if (action === 'checkPin')      out = checkPin(p.pin);
+    else if (action === 'saveQC')        out = saveQC(p.pin, JSON.parse(p.rec));
+    else if (action === 'saveStock')     out = saveStock(p.pin, p.lot, p.location, p.qtyTon, p.bags);
+    else out = {error:'unknown action'};
+  } catch (err) { out = {error: String(err && err.message ? err.message : err)}; }
+  return ContentService.createTextOutput(cb + '(' + JSON.stringify(out) + ')')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
+}
 
 /* =================================================================
  *  AUTH — ตรวจ PIN แยกบทบาท (ตรวจฝั่งเซิร์ฟเวอร์ทุกครั้งที่เขียน)
@@ -104,8 +122,18 @@ function getLatestInfo(){
   };
 }
 
-/* คืนรายการทั้งหมด (สำหรับหน้าแอป) — ปลอดภัยเพราะ read-only */
+/* คืนรายการทั้งหมด (สำหรับหน้าแอป) — ปลอดภัยเพราะ read-only
+   ใช้ CacheService ให้ตอบไวขึ้นมาก (แคช 5 นาที ล้างอัตโนมัติเมื่อมีการบันทึก) */
 function getRecords(){
+  var cache = CacheService.getScriptCache();
+  var hit = cache.get('records');
+  if (hit) return JSON.parse(hit);
+  var res = buildRecords();
+  try{ cache.put('records', JSON.stringify(res), 300); }catch(e){}
+  return res;
+}
+function bustCache(){ try{ CacheService.getScriptCache().remove('records'); }catch(e){} }
+function buildRecords(){
   var sh = ss().getSheetByName(DATA_SHEET);
   if (!sh || sh.getLastRow() < 2) return {rows:[], spec:spec()};
   var last = sh.getLastRow();
@@ -156,6 +184,7 @@ function saveQC(pin, rec){
     sh.getRange(r,COL.lot).setValue(rec.lot);
     write(sh.getRange(r,1,1,20));
   }
+  bustCache();
   return {ok:true};
 }
 
@@ -169,6 +198,7 @@ function saveStock(pin, lot, location, qtyTon, bags){
   sh.getRange(rowIdx,COL.bags).setValue(numOrBlank(bags));
   sh.getRange(rowIdx,COL.updatedBy).setValue('คลังสินค้า');
   sh.getRange(rowIdx,COL.updatedAt).setValue(new Date());
+  bustCache();
   return {ok:true};
 }
 

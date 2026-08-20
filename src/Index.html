@@ -311,6 +311,7 @@ input,select{font-family:var(--ff)}
       <button class="ditem" data-nav="history" onclick="closeMenu();go('history')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 4v4h4"/><path d="M12 8v4l3 2"/></svg>ประวัติ</button>
       <button class="ditem" data-nav="settings" onclick="closeMenu();go('settings')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1L14.5 2h-4l-.3 2.6a7 7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.3 2.6h4l.3-2.6a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6a7 7 0 0 0 .1-1z"/></svg>ตั้งค่า</button>
       <div class="ddiv"></div>
+      <button class="ditem" onclick="closeMenu();openInstall()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12M7 10l5 5 5-5"/><path d="M4 19h16"/></svg>ติดตั้งแอปลงหน้าจอ</button>
       <button class="ditem" onclick="closeMenu();go('settings');openAbout()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 16v-4M12 8h.01"/></svg>เกี่ยวกับแอป</button>
     </div>
   </div>
@@ -345,6 +346,39 @@ function currentScreen(){var s='home';['role','history','settings'].forEach(func
 function goBack(){ if(history.state&&history.state.s){history.back();} else {go('home');} }
 function openMenu(){$('drawer').classList.add('open');}
 function closeMenu(){$('drawer').classList.remove('open');}
+
+/* ---------- ติดตั้งลงหน้าจอ (Android / iOS) ---------- */
+var installEvt=null;
+window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();installEvt=e;});
+function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)&&!window.MSStream;}
+function isInstalled(){return window.matchMedia('(display-mode: standalone)').matches||window.navigator.standalone===true;}
+function openInstall(){
+  if(isInstalled()){toast('✓ แอปติดตั้งอยู่บนหน้าจอแล้ว');return;}
+  if(installEvt){ // Android/Chrome — เด้งหน้าต่างติดตั้งของระบบเลย
+    installEvt.prompt();
+    installEvt.userChoice.then(function(r){ if(r.outcome==='accepted'){toast('✓ ติดตั้งแอปแล้ว');installEvt=null;} });
+    return;
+  }
+  var ic=document.querySelector('link[rel="icon"]').getAttribute('href');
+  var step=function(n,t){return '<div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:13px">'+
+    '<div style="width:26px;height:26px;border-radius:50%;background:var(--amber-soft);color:var(--amber-2);font-weight:700;font-size:13px;display:grid;place-items:center;flex:0 0 auto">'+n+'</div>'+
+    '<div style="font-size:14px;line-height:1.55;padding-top:2px">'+t+'</div></div>';};
+  var steps = isIOS()
+    ? step(1,'เปิดแอปนี้ใน <b>Safari</b> (ถ้ายังไม่ได้เปิด)')+
+      step(2,'แตะปุ่ม <b>แชร์</b> <span style="color:var(--blue)">⎋</span> ที่แถบด้านล่าง')+
+      step(3,'เลื่อนหา <b>“เพิ่มลงในหน้าจอโฮม”</b> (Add to Home Screen) แล้วแตะ')+
+      step(4,'แตะ <b>“เพิ่ม”</b> มุมขวาบน — เสร็จแล้ว! 🎉')
+    : step(1,'เปิดแอปนี้ใน <b>Chrome</b>')+
+      step(2,'แตะเมนู <b>⋮</b> มุมขวาบน')+
+      step(3,'เลือก <b>“ติดตั้งแอป”</b> หรือ <b>“เพิ่มลงในหน้าจอหลัก”</b>')+
+      step(4,'ยืนยัน — เสร็จแล้ว! 🎉');
+  $('panel').innerHTML='<div class="grab"></div><button class="sheetx" onclick="closeSheet()">✕</button>'+
+    '<div style="text-align:center;padding:6px 0 14px">'+
+    '<img src="'+ic+'" style="width:64px;height:64px;border-radius:16px;box-shadow:0 5px 15px rgba(30,60,120,.2)">'+
+    '<div style="font-size:18px;font-weight:700;margin-top:10px">ติดตั้ง iFind ลงหน้าจอ</div>'+
+    '<div style="font-size:12.5px;color:var(--text-2)">ใช้งานเหมือนแอปจริง เปิดได้จากหน้าจอโฮม</div></div>'+steps;
+  openSheet();
+}
 window.addEventListener('popstate',function(){
   if($('drawer').classList.contains('open')){closeMenu();var c0=currentScreen();if(c0!=='home')history.pushState({s:c0},'');return;}
   var sh=$('sheet').classList.contains('open'), ph=$('pinSheet').classList.contains('open');
@@ -356,10 +390,32 @@ window.addEventListener('popstate',function(){
   }
   go('home',true);
 });
+/* ---------- โหลดข้อมูลแบบเร็ว: แสดงจากแคชทันที แล้วอัปเดตเบื้องหลัง ---------- */
+var lastFetch=0;
+function ensureData(after,targetEl){
+  var had=RECORDS.length>0;
+  if(!had){
+    try{var c=localStorage.getItem('ifind_cache');if(c){var o=JSON.parse(c);SPEC=o.spec;RECORDS=o.rows;had=true;}}catch(e){}
+  }
+  if(had){ after(); }
+  else if(targetEl){ $(targetEl).innerHTML='<div class="loading">กำลังโหลดข้อมูล…</div>'; }
+  if(had && Date.now()-lastFetch<15000) return;   // ข้อมูลสดอยู่แล้ว ไม่ต้องยิงซ้ำ
+  google.script.run.withSuccessHandler(function(res){
+    lastFetch=Date.now(); SPEC=res.spec; RECORDS=res.rows;
+    try{localStorage.setItem('ifind_cache',JSON.stringify(res));}catch(e){}
+    after();
+  }).withFailureHandler(function(e){
+    if(!had&&targetEl)$(targetEl).innerHTML='<div class="empty">โหลดข้อมูลไม่ได้: '+e.message+'</div>';
+  }).getRecords();
+}
+function tkey(s){var m=String(s||'').match(/(\d{2})\/(\d{2})\/(\d{4})\s*(\d{2}):(\d{2})/);return m?m[3]+m[2]+m[1]+m[4]+m[5]:'';}
 function loadLatest(){
-  google.script.run.withSuccessHandler(function(r){
-    $('latestTxt').textContent=r&&r.count?('บันทึกล่าสุด '+(r.lastDate||'-')+' น. · รวม '+r.count+' รายการ'):'ยังไม่มีข้อมูล';
-  }).withFailureHandler(function(){$('latestTxt').textContent='เชื่อมต่อไม่ได้';}).getLatestInfo();
+  ensureData(function(){
+    if(!RECORDS.length){$('latestTxt').textContent='ยังไม่มีข้อมูล';return;}
+    var best='',bs='';
+    RECORDS.forEach(function(r){var k=tkey(r.updatedAt);if(k>bs){bs=k;best=r.updatedAt;}});
+    $('latestTxt').textContent='บันทึกล่าสุด '+(best||'-')+' น. · รวม '+RECORDS.length+' รายการ';
+  },null);
 }
 function enterRole(role){
   if(role==='warehouse'){ SESSION={pin:'',role:'warehouse',label:'คลังสินค้า'}; startRole('warehouse'); return; }
@@ -401,11 +457,7 @@ function startRole(role){
   $('fab').style.display=role==='qc'?'flex':'none';
   filters={q:'',grade:'all',maxColor:'',minPol:''};currentRoleView=role;loadData();
 }
-function loadData(){
-  $('body').innerHTML='<div class="loading">กำลังโหลดข้อมูล…</div>';
-  google.script.run.withSuccessHandler(function(res){SPEC=res.spec;RECORDS=res.rows;render();})
-    .withFailureHandler(function(e){$('body').innerHTML='<div class="empty">โหลดข้อมูลไม่ได้: '+e.message+'</div>';}).getRecords();
-}
+function loadData(){ ensureData(render,'body'); }
 function render(){ currentRoleView==='qc'?renderQC():renderWarehouse(); }
 
 function tint(icu){var t=Math.max(0,Math.min(1,(+icu||0)/1350));var a=[255,253,246],b=[176,106,22];
@@ -502,7 +554,7 @@ function saveQC(){
   var rec={lot:$('f_lot').value.trim(),grade:$('f_grade').value,prod:$('f_prod').value.trim(),color:$('f_color').value,pol:$('f_pol').value,moist:$('f_moist').value,invert:$('f_invert').value,ma:$('f_ma').value,ash:$('f_ash').value};
   if(!rec.lot){toast('กรุณาใส่เลข Lot',true);return;}
   $('saveBtn').textContent='กำลังบันทึก…';$('saveBtn').disabled=true;
-  google.script.run.withSuccessHandler(function(){toast('✓ บันทึกลง Google Sheets แล้ว');closeSheet();loadData();})
+  google.script.run.withSuccessHandler(function(){toast('✓ บันทึกลง Google Sheets แล้ว');closeSheet();lastFetch=0;try{localStorage.removeItem('ifind_cache');}catch(e){}loadData();})
     .withFailureHandler(function(e){$('saveBtn').textContent='บันทึกลงชีต';$('saveBtn').disabled=false;toast(e.message,true);}).saveQC(SESSION.pin,rec);
 }
 function openStock(le){
@@ -515,19 +567,16 @@ function openStock(le){
   openSheet();
 }
 function saveStock(le){var lot=decodeURIComponent(le);$('stBtn').textContent='กำลังบันทึก…';$('stBtn').disabled=true;
-  google.script.run.withSuccessHandler(function(){toast('✓ บันทึกสต๊อกแล้ว');closeSheet();loadData();})
+  google.script.run.withSuccessHandler(function(){toast('✓ บันทึกสต๊อกแล้ว');closeSheet();lastFetch=0;try{localStorage.removeItem('ifind_cache');}catch(e){}loadData();})
     .withFailureHandler(function(e){$('stBtn').textContent='บันทึกสต๊อก';$('stBtn').disabled=false;toast(e.message,true);}).saveStock(SESSION.pin,lot,$('s_loc').value.trim(),$('s_ton').value,$('s_bags').value);
 }
-function loadHistory(){
-  $('histBody').innerHTML='<div class="loading">กำลังโหลด…</div>';
-  google.script.run.withSuccessHandler(function(res){
-    SPEC=res.spec;
-    var rows=res.rows.filter(function(r){return r.updatedAt;}).sort(function(a,b){return (b.updatedAt||'').localeCompare(a.updatedAt||'');}).slice(0,40);
-    if(!rows.length){$('histBody').innerHTML='<div class="empty">ยังไม่มีประวัติ</div>';return;}
-    $('histBody').innerHTML=rows.map(function(r){var st=statusOf(r);
-      return '<div class="card"><div class="top">'+swatchHTML(r)+'<div><div class="strike">'+esc(r.lot)+'</div><div class="lot">'+(r.updatedBy?esc(r.updatedBy):'')+(r.updatedAt?' · '+esc(r.updatedAt):'')+'</div></div><span class="pill '+(st||'warn')+'" style="margin-left:auto"><span class="d"></span>'+STL[st]+'</span></div></div>';
-    }).join('');
-  }).withFailureHandler(function(){$('histBody').innerHTML='<div class="empty">โหลดไม่ได้</div>';}).getRecords();
+function loadHistory(){ ensureData(renderHistory,'histBody'); }
+function renderHistory(){
+  var rows=RECORDS.filter(function(r){return r.updatedAt;}).sort(function(a,b){return tkey(b.updatedAt).localeCompare(tkey(a.updatedAt));}).slice(0,40);
+  if(!rows.length){$('histBody').innerHTML='<div class="empty">ยังไม่มีประวัติ</div>';return;}
+  $('histBody').innerHTML=rows.map(function(r){var st=statusOf(r);
+    return '<div class="card"><div class="top">'+swatchHTML(r)+'<div><div class="strike">'+esc(r.lot)+'</div><div class="lot">'+(r.updatedBy?esc(r.updatedBy):'')+(r.updatedAt?' · '+esc(r.updatedAt):'')+'</div></div><span class="pill '+(st||'warn')+'" style="margin-left:auto"><span class="d"></span>'+STL[st]+'</span></div></div>';
+  }).join('');
 }
 function fillSettings(){
   if(SESSION){$('setUser').textContent=SESSION.label;$('setRole').textContent=SESSION.role==='qc'?'ฝ่ายควบคุมคุณภาพ (QC)':'ฝ่ายคลังสินค้า';}
