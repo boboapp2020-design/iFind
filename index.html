@@ -363,7 +363,7 @@ var API_URL="https://script.google.com/macros/s/AKfycbzNTvJoZIh1CSnN54d0TJb5a29j
     withSuccessHandler:function(f){return make().withSuccessHandler(f);},
     withFailureHandler:function(f){return make().withFailureHandler(f);}
   }}};
-  if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js"); }
+  if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(function(r){r.update();}); }
 })();
 </script>
 <script>
