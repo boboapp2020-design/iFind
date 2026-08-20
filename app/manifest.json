@@ -1,0 +1,16 @@
+{
+  "name": "iFind — ค้นหาค่าสีน้ำตาลในคลัง",
+  "short_name": "iFind",
+  "description": "ค้นหาค่าสีและคุณภาพน้ำตาลในคลังสินค้า — Mitr Lao Sugar",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3ECDD",
+  "theme_color": "#1E63C9",
+  "lang": "th",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}
