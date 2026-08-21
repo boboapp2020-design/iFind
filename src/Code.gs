@@ -59,6 +59,7 @@ function apiHandler(e){
     else if (action === 'checkPin')      out = checkPin(p.pin);
     else if (action === 'saveQC')        out = saveQC(p.pin, JSON.parse(p.rec));
     else if (action === 'saveStock')     out = saveStock(p.pin, p.lot, p.location, p.qtyTon, p.bags);
+    else if (action === 'changePin')    out = changePinServer(p.oldPin, p.newPin);
     else out = {error:'unknown action'};
   } catch (err) { out = {error: String(err && err.message ? err.message : err)}; }
   return ContentService.createTextOutput(cb + '(' + JSON.stringify(out) + ')')
@@ -81,6 +82,23 @@ function requireRole(pin, role){
   if (role && r.role !== role && !(role==='warehouse' && r.role==='qc'))
     throw new Error('บทบาทนี้ไม่มีสิทธิ์ทำรายการ');
   return r;
+}
+
+function changePinServer(oldPin, newPin){
+  var cfg = getConfig();
+  oldPin = String(oldPin||'').trim();
+  newPin = String(newPin||'').trim();
+  if (newPin.length !== 4 || !/^\d{4}$/.test(newPin)) return {ok:false, error:'PIN ใหม่ต้องเป็นตัวเลข 4 หลัก'};
+  if (oldPin !== String(cfg.PIN_QC)) return {ok:false, error:'PIN เดิมไม่ถูกต้อง'};
+  var sh = ss().getSheetByName(CFG_SHEET);
+  if (!sh) return {ok:false, error:'ไม่พบชีต CONFIG'};
+  var vals = sh.getRange(1,1,sh.getLastRow()||1,2).getValues();
+  var found = false;
+  for (var i = 0; i < vals.length; i++){
+    if (String(vals[i][0]).trim() === 'PIN_QC'){ sh.getRange(i+1,2).setValue(newPin); found = true; break; }
+  }
+  if (!found) sh.appendRow(['PIN_QC', newPin]);
+  return {ok:true};
 }
 
 /* =================================================================
