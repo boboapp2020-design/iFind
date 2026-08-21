@@ -114,7 +114,11 @@ function _doMigrate2(clearFirst) {
   if (out.length > 0) {
     var startRow = data.getLastRow() + 1;
     data.getRange(startRow, 1, out.length, 20).setValues(out);
-    bustCache();
+    // ล้างแคชแบบปลอดภัย (ทำงานได้แม้ยังไม่ได้อัปเดต Code.gs เวอร์ชันใหม่)
+    try {
+      if (typeof bustCache === 'function') bustCache();
+      else CacheService.getScriptCache().remove('records');
+    } catch (e) {}
   }
 
   Logger.log('=== Migrate2 เสร็จสิ้น ===');
