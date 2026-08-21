@@ -521,9 +521,9 @@ function statusOf(r){var c=checks(r),f=0,n=0;['color','pol','moist','invert','ma
   if(n===0)return'';if(f===0)return'pass';if(f===1)return'warn';return'fail';}
 var STL={pass:'ผ่านสเปก',warn:'เฝ้าระวัง',fail:'ไม่ผ่าน','':'ยังไม่ครบ'};
 
-function renderWarehouse(){
+function warehouseRows(){
   var q=filters.q.trim().toLowerCase();
-  var rows=RECORDS.filter(function(r){
+  return RECORDS.filter(function(r){
     if(q&&String(r.lot).toLowerCase().indexOf(q)!==0)return false;   // ค้นแบบขึ้นต้นด้วย
     if(filters.grade!=='all'&&r.grade!==filters.grade)return false;
     if(filters.colorMin!==''&&!(r.color!==''&&+r.color>=+filters.colorMin))return false;
@@ -532,18 +532,29 @@ function renderWarehouse(){
     if(filters.maMax!==''&&!(r.ma!==''&&+r.ma<=+filters.maMax))return false;
     return true;
   }).sort(function(a,b){return(+a.color||9e9)-(+b.color||9e9);});
+}
+function whChips(){return ['all','DCR','VHP','White'].map(function(g){return '<span class="chip" aria-pressed="'+(filters.grade===g)+'" onclick="filters.grade=\''+g+'\';whSyncChips();warehouseList()">'+(g==='all'?'ทั้งหมด':g)+'</span>';}).join('');}
+function whSyncChips(){var c=document.querySelector('.chips');if(c)c.innerHTML=whChips();}
+// อัปเดตเฉพาะรายการผลลัพธ์ — ไม่แตะช่องค้นหา คีย์บอร์ดจึงไม่รีเซ็ต
+function warehouseList(){
+  var el=$('results');if(!el)return;
+  var rows=warehouseRows();
+  el.innerHTML='<div class="listhead"><b>ผลการค้นหา</b><small>'+rows.length+' รายการ · เรียงตามค่าสี</small></div>'+
+    (rows.length?rows.map(cardHTML).join(''):'<div class="empty">ไม่พบน้ำตาลที่ตรงเงื่อนไข</div>');
+}
+function renderWarehouse(){
   $('body').innerHTML=
     '<div class="searchbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>'+
-    '<input id="q" placeholder="ค้นหาเลข Lot (Strike)…" value="'+esc(filters.q)+'" oninput="filters.q=this.value;renderWarehouse();focusId(\'q\')"></div>'+
-    '<div class="chips">'+['all','DCR','VHP','White'].map(function(g){return '<span class="chip" aria-pressed="'+(filters.grade===g)+'" onclick="filters.grade=\''+g+'\';renderWarehouse()">'+(g==='all'?'ทั้งหมด':g)+'</span>';}).join('')+'</div>'+
+    '<input id="q" inputmode="numeric" pattern="[0-9]*" placeholder="ค้นหาเลข Lot (Strike)…" value="'+esc(filters.q)+'" oninput="filters.q=this.value;warehouseList()"></div>'+
+    '<div class="chips">'+whChips()+'</div>'+
     '<div class="advanced"><div class="atitle">◆ ค้นหาค่าที่เหมาะสม (ระบุเป็นช่วง)</div><div class="arow">'+
-      '<div class="field"><label>สีต่ำสุด (ICU)</label><input inputmode="numeric" value="'+esc(filters.colorMin)+'" oninput="filters.colorMin=this.value;renderWarehouse();focusAdv(0)" placeholder="เช่น 300"></div>'+
-      '<div class="field"><label>สีสูงสุด (ICU)</label><input inputmode="numeric" value="'+esc(filters.colorMax)+'" oninput="filters.colorMax=this.value;renderWarehouse();focusAdv(1)" placeholder="เช่น 700"></div>'+
-      '<div class="field"><label>M.A. ต่ำสุด (mm)</label><input inputmode="decimal" value="'+esc(filters.maMin)+'" oninput="filters.maMin=this.value;renderWarehouse();focusAdv(2)" placeholder="เช่น 0.80"></div>'+
-      '<div class="field"><label>M.A. สูงสุด (mm)</label><input inputmode="decimal" value="'+esc(filters.maMax)+'" oninput="filters.maMax=this.value;renderWarehouse();focusAdv(3)" placeholder="เช่น 1.10"></div>'+
+      '<div class="field"><label>สีต่ำสุด (ICU)</label><input inputmode="numeric" value="'+esc(filters.colorMin)+'" oninput="filters.colorMin=this.value;warehouseList()" placeholder="เช่น 300"></div>'+
+      '<div class="field"><label>สีสูงสุด (ICU)</label><input inputmode="numeric" value="'+esc(filters.colorMax)+'" oninput="filters.colorMax=this.value;warehouseList()" placeholder="เช่น 700"></div>'+
+      '<div class="field"><label>M.A. ต่ำสุด (mm)</label><input inputmode="decimal" value="'+esc(filters.maMin)+'" oninput="filters.maMin=this.value;warehouseList()" placeholder="เช่น 0.80"></div>'+
+      '<div class="field"><label>M.A. สูงสุด (mm)</label><input inputmode="decimal" value="'+esc(filters.maMax)+'" oninput="filters.maMax=this.value;warehouseList()" placeholder="เช่น 1.10"></div>'+
     '</div></div>'+
-    '<div class="listhead"><b>ผลการค้นหา</b><small>'+rows.length+' รายการ · เรียงตามค่าสี</small></div>'+
-    (rows.length?rows.map(cardHTML).join(''):'<div class="empty">ไม่พบน้ำตาลที่ตรงเงื่อนไข</div>');
+    '<div id="results"></div>';
+  warehouseList();
 }
 function cardHTML(r){var st=statusOf(r);
   return '<div class="card" onclick="openDetail(\''+encodeURIComponent(r.lot)+'\')"><div class="top">'+
@@ -561,14 +572,19 @@ function cardHTML(r){var st=statusOf(r);
     (r.updatedAt?'<div class="card-time">แก้ไข '+esc(r.updatedAt)+(r.updatedBy?' · '+esc(r.updatedBy):'')+'</div>':'')+
     '</div>';
 }
-function renderQC(){
+function qcList(){
+  var el=$('results');if(!el)return;
   var q=(filters.q||'').trim().toLowerCase();
   var rows=RECORDS.filter(function(r){return !q||String(r.lot).toLowerCase().indexOf(q)===0;});
+  el.innerHTML='<div class="listhead"><b>รายการทั้งหมด</b><small>'+rows.length+' Lot</small></div>'+
+    (rows.length?rows.map(cardHTML).join(''):'<div class="empty">ยังไม่มีข้อมูล — กด “บันทึกค่าใหม่”</div>');
+}
+function renderQC(){
   $('body').innerHTML=
     '<div class="searchbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>'+
-    '<input id="q" placeholder="ค้นหา Lot ที่จะแก้ไข…" value="'+esc(filters.q)+'" oninput="filters.q=this.value;renderQC();focusId(\'q\')"></div>'+
-    '<div class="listhead"><b>รายการทั้งหมด</b><small>'+rows.length+' Lot</small></div>'+
-    (rows.length?rows.map(cardHTML).join(''):'<div class="empty">ยังไม่มีข้อมูล — กด “บันทึกค่าใหม่”</div>');
+    '<input id="q" inputmode="numeric" pattern="[0-9]*" placeholder="ค้นหา Lot ที่จะแก้ไข…" value="'+esc(filters.q)+'" oninput="filters.q=this.value;qcList()"></div>'+
+    '<div id="results"></div>';
+  qcList();
 }
 function openDetail(le){
   var lot=decodeURIComponent(le);var r=RECORDS.filter(function(x){return x.lot===lot;})[0];if(!r)return;
