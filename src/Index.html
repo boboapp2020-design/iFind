@@ -120,6 +120,7 @@ input,select{font-family:var(--ff)}
 .pill.fail{color:var(--fail);background:var(--fail-bg);border:1px solid var(--fail-line)}
 .pill .d{width:6px;height:6px;border-radius:50%;background:currentColor}
 .empty{text-align:center;color:var(--text-3);font-size:14px;padding:44px 10px}
+.more{text-align:center;color:var(--text-3);font-size:12.5px;padding:16px 10px 24px}
 .loading{text-align:center;color:var(--text-3);padding:40px}
 
 .fab{position:fixed;bottom:22px;right:calc(50% - 230px + 22px);height:52px;padding:0 20px;border-radius:15px;
@@ -470,10 +471,16 @@ function startRole(role){
   $('whoName').textContent=role==='qc'?'บันทึกค่าคุณภาพ':'ค้นหาสินค้า';$('whoDesc').textContent=SESSION.label;
   $('roleBadge').className='badge '+(role==='qc'?'edit':'view');$('roleBadge').textContent=role==='qc'?'แก้ไขได้':'อ่าน + สต๊อก';
   $('fab').style.display=role==='qc'?'flex':'none';
-  filters={q:'',grade:'all',colorMin:'',colorMax:'',maMin:'',maMax:''};currentRoleView=role;loadData();
+  filters={q:'',grade:'all',colorMin:'',colorMax:'',maMin:'',maMax:''};currentRoleView=role;shellView=null;loadData();
 }
 function loadData(){ ensureData(render,'body'); }
-function render(){ currentRoleView==='qc'?renderQC():renderWarehouse(); }
+var shellView=null;
+function render(){
+  var v=currentRoleView;
+  // ถ้าโครงหน้าเดิมอยู่แล้ว (เช่นรีเฟรชข้อมูลเบื้องหลัง) อัปเดตเฉพาะรายการ ไม่สร้างช่องค้นหาใหม่
+  if($('results')&&shellView===v){ v==='qc'?qcList():warehouseList(); }
+  else { shellView=v; v==='qc'?renderQC():renderWarehouse(); }
+}
 
 function tint(icu){var t=Math.max(0,Math.min(1,(+icu||0)/1350));var a=[255,253,246],b=[176,106,22];
   var c=a.map(function(v,i){return Math.round(v+(b[i]-v)*Math.pow(t,.82));});return 'rgb('+c[0]+','+c[1]+','+c[2]+')';}
@@ -499,14 +506,16 @@ function warehouseRows(){
     return true;
   }).sort(function(a,b){return(+a.color||9e9)-(+b.color||9e9);});
 }
-function whChips(){return ['all','DCR','VHP','White'].map(function(g){return '<span class="chip" aria-pressed="'+(filters.grade===g)+'" onclick="filters.grade=\''+g+'\';whSyncChips();warehouseList()">'+(g==='all'?'ทั้งหมด':g)+'</span>';}).join('');}
+var LIST_CAP=80;   // จำกัดจำนวนการ์ดที่ render ต่อครั้ง เพื่อให้แสดงผลไว (ค้นหาด้วย Strike เพื่อกรองให้แคบ)
+function whChips(){return ['all','DCR','VHP','Organic'].map(function(g){return '<span class="chip" aria-pressed="'+(filters.grade===g)+'" onclick="filters.grade=\''+g+'\';whSyncChips();warehouseList()">'+(g==='all'?'ทั้งหมด':g)+'</span>';}).join('');}
 function whSyncChips(){var c=document.querySelector('.chips');if(c)c.innerHTML=whChips();}
 // อัปเดตเฉพาะรายการผลลัพธ์ — ไม่แตะช่องค้นหา คีย์บอร์ดจึงไม่รีเซ็ต
 function warehouseList(){
   var el=$('results');if(!el)return;
-  var rows=warehouseRows();
-  el.innerHTML='<div class="listhead"><b>ผลการค้นหา</b><small>'+rows.length+' รายการ · เรียงตามค่าสี</small></div>'+
-    (rows.length?rows.map(cardHTML).join(''):'<div class="empty">ไม่พบน้ำตาลที่ตรงเงื่อนไข</div>');
+  var rows=warehouseRows(),total=rows.length,shown=rows.slice(0,LIST_CAP);
+  el.innerHTML='<div class="listhead"><b>ผลการค้นหา</b><small>'+total+' รายการ · เรียงตามค่าสี</small></div>'+
+    (total?shown.map(cardHTML).join('')+(total>LIST_CAP?'<div class="more">แสดง '+LIST_CAP+' รายการแรก · พิมพ์เลข Strike เพื่อค้นหาให้แคบลง</div>':'')
+          :'<div class="empty">ไม่พบน้ำตาลที่ตรงเงื่อนไข</div>');
 }
 function renderWarehouse(){
   $('body').innerHTML=
@@ -542,8 +551,10 @@ function qcList(){
   var el=$('results');if(!el)return;
   var q=(filters.q||'').trim().toLowerCase();
   var rows=RECORDS.filter(function(r){return !q||String(r.lot).toLowerCase().indexOf(q)===0;});
-  el.innerHTML='<div class="listhead"><b>รายการทั้งหมด</b><small>'+rows.length+' Lot</small></div>'+
-    (rows.length?rows.map(cardHTML).join(''):'<div class="empty">ยังไม่มีข้อมูล — กด “บันทึกค่าใหม่”</div>');
+  var total=rows.length,shown=rows.slice(0,LIST_CAP);
+  el.innerHTML='<div class="listhead"><b>รายการทั้งหมด</b><small>'+total+' Lot</small></div>'+
+    (total?shown.map(cardHTML).join('')+(total>LIST_CAP?'<div class="more">แสดง '+LIST_CAP+' รายการแรก · พิมพ์เลข Strike เพื่อค้นหา Lot ที่ต้องการ</div>':'')
+          :'<div class="empty">ยังไม่มีข้อมูล — กด “บันทึกค่าใหม่”</div>');
 }
 function renderQC(){
   $('body').innerHTML=
