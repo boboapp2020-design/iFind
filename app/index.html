@@ -379,7 +379,8 @@ var API_URL="https://script.google.com/macros/s/AKfycbzNTvJoZIh1CSnN54d0TJb5a29j
       saveQC:function(pin,rec){jsonp({api:"saveQC",pin:pin,rec:JSON.stringify(rec)},ok,err);},
       saveStock:function(pin,lot,loc,ton,bags){jsonp({api:"saveStock",pin:pin,lot:lot,location:loc,qtyTon:ton,bags:bags},ok,err);},
       changePin:function(oldPin,newPin){jsonp({api:"changePin",oldPin:oldPin,newPin:newPin},ok,err);},
-      importUpsert:function(pin,rows){jsonp({api:"importUpsert",pin:pin,rows:JSON.stringify(rows)},ok,err);}
+      importUpsert:function(pin,rows){jsonp({api:"importUpsert",pin:pin,rows:JSON.stringify(rows)},ok,err);},
+      getCustomers:function(){jsonp({api:"getCustomers"},ok,err);}
     };return api;
   }
   window.google={script:{run:{
@@ -564,7 +565,7 @@ var STL={pass:'ผ่านสเปก',warn:'เฝ้าระวัง',fail
 /* ---------- สเปกลูกค้า: เทียบค่าจริงของ Strike ว่าผ่านลูกค้าเจ้าไหน ----------
    cmax=สีสูงสุด cmin=สีต่ำสุด pmin=Pol ต่ำสุด momax=ชื้นสูงสุด ivmax=Invert สูงสุด
    mamin/mamax=ช่วง MA sdmax=Sediment สูงสุด (null=ไม่กำหนด) t=ชนิดน้ำตาล(เกรด) */
-var CUSTOMERS=[
+var CUSTOMERS_FALLBACK=[
   {n:"Hoi tien phat",t:"DCR",cmax:1600,pmin:99.00,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
   {n:"Sucden Asia",t:"DCR",cmin:300,cmax:800,pmin:99.00,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
   {n:"SOPEX",t:"DCR",cmax:1200,pmin:99.00,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
@@ -592,6 +593,60 @@ var CUSTOMERS=[
   {n:"HA MINH ONE MEMBER COMPANY LIMITED",t:"DCR",cmin:401,pmin:99.00,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
   {n:"Phan Nguyen International Investment & Trade JSC",t:"Organic",cmax:500,pmin:99.20,momax:0.10,ivmax:0.80,mamin:0.70,mamax:1.00}
 ];
+// CUSTOMERS = ตัวที่ใช้จริง (โหลดจากชีต Spec ถ้าได้ ไม่งั้นใช้ fallback ที่ฝังไว้)
+var CUSTOMERS = CUSTOMERS_FALLBACK.slice();
+try{ var _cc=localStorage.getItem('ifind_cust'); if(_cc){var _p=JSON.parse(_cc); if(_p&&_p.length)CUSTOMERS=_p;} }catch(e){}
+
+/* ---------- โหลด/parse สเปกลูกค้าจากชีต "Spec" ---------- */
+function _numMin(s){ s=String(s==null?'':s).replace(/,/g,''); var m=s.match(/-?\d+(\.\d+)?/); return m?+m[0]:null; }
+function _numMax(s){ s=String(s==null?'':s).trim(); if(!s||s==='-')return null; s=s.replace(/,/g,''); var m=s.match(/-?\d+(\.\d+)?/); return m?+m[0]:null; }
+function _color(s){ s=String(s==null?'':s).replace(/,/g,'').trim(); var o={}; if(!s||s==='-')return o;
+  var nums=(s.match(/\d+(\.\d+)?/g)||[]).map(Number);
+  if(/\d\s*-\s*\d/.test(s)&&nums.length>=2){o.cmin=nums[0];o.cmax=nums[1];return o;}
+  if(/min/i.test(s)){if(nums.length)o.cmin=nums[0];return o;}
+  if(nums.length)o.cmax=nums[0]; return o; }               // ไม่มีคำ = ถือเป็น Max
+function _range(s){ s=String(s==null?'':s).replace(/,/g,''); var o={}; var nums=(s.match(/\d+(\.\d+)?/g)||[]).map(Number);
+  if(nums.length>=2){o.mamin=nums[0];o.mamax=nums[1];} else if(nums.length===1){o.mamin=nums[0];} return o; }
+function _custType(row){ for(var j=0;j<row.length;j++){var v=String(row[j]||'');
+  if(/organic/i.test(v))return'Organic'; if(/vhp/i.test(v))return'VHP'; if(/golden/i.test(v))return'Golden Granulated';
+  if(/white/i.test(v))return'white'; if(/dcr/i.test(v))return'DCR'; } return ''; }
+function parseCustomerRows(rows){
+  if(!rows||rows.length<2) return null;
+  var hi=-1;
+  for(var i=0;i<Math.min(rows.length,12);i++){ var rr=rows[i]||[];
+    if(rr.some(function(c){return String(c).trim().toLowerCase()==='customer';})&&rr.some(function(c){return /colou?r/i.test(String(c));})){hi=i;break;} }
+  if(hi<0) return null;
+  var H=rows[hi].map(function(c){return String(c==null?'':c).trim();});
+  function ci(pred){ for(var j=0;j<H.length;j++){var l=H[j].toLowerCase(); if(pred(H[j],l))return j;} return -1; }
+  var iName=ci(function(h,l){return l==='customer';}); if(iName<0)iName=ci(function(h,l){return l.indexOf('customer')>=0&&l.indexOf('code')<0&&l.indexOf('1')<0&&l.indexOf('2')<0;});
+  var iColor=ci(function(h,l){return /colou?r/.test(l);});
+  var iPol=ci(function(h,l){return l.indexOf('pol')>=0;});
+  var iMoist=ci(function(h,l){return l.indexOf('moist')>=0;});
+  var iInv=ci(function(h,l){return l.indexOf('invert')>=0;});
+  var iMA=ci(function(h,l){return l.indexOf('m.a')>=0||l==='ma'||l.indexOf('target')>=0;});
+  var iSed=ci(function(h,l){return l.indexOf('sediment')>=0;});
+  var list=[];
+  for(var r=hi+1;r<rows.length;r++){ var row=rows[r]; if(!row)continue;
+    var name=String(iName>=0?row[iName]:'').trim(); if(!name||name==='-')continue;
+    var t=_custType(row); if(!t)continue;
+    var o={n:name,t:t};
+    if(iColor>=0){var cc=_color(row[iColor]); for(var k in cc)o[k]=cc[k];}
+    if(iPol>=0){var pm=_numMin(row[iPol]); if(pm!=null)o.pmin=pm;}
+    if(iMoist>=0){var mm=_numMax(row[iMoist]); if(mm!=null)o.momax=mm;}
+    if(iInv>=0){var im=_numMax(row[iInv]); if(im!=null)o.ivmax=im;}
+    if(iMA>=0){var rg=_range(row[iMA]); for(var k2 in rg)o[k2]=rg[k2];}
+    if(iSed>=0){var sm=_numMax(row[iSed]); if(sm!=null)o.sdmax=sm;}
+    list.push(o);
+  }
+  return list.length?list:null;
+}
+function loadCustomers(){
+  google.script.run.withSuccessHandler(function(res){
+    var list=res&&res.rows?parseCustomerRows(res.rows):null;
+    if(list&&list.length){ CUSTOMERS=list; try{localStorage.setItem('ifind_cust',JSON.stringify(list));}catch(e){}
+      if($('results')) render(); }   // รีเฟรชการ์ดถ้ากำลังดูรายการอยู่
+  }).withFailureHandler(function(){}).getCustomers();
+}
 function passCustomers(r){
   var g=String(r.grade||'').toLowerCase().trim(); if(!g) return [];
   function has(k){return r[k]!==''&&r[k]!=null&&!isNaN(+r[k]);}
@@ -1070,6 +1125,7 @@ function focusId(id){var e=$(id);if(e){var v=e.value;e.focus();e.setSelectionRan
 function focusAdv(i){var e=document.querySelectorAll('.advanced input')[i];if(e){var v=e.value;e.focus();e.setSelectionRange(v.length,v.length);}}
 
 loadLatest();
+loadCustomers();
 </script>
 </body>
 </html>

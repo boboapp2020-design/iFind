@@ -63,6 +63,7 @@ function apiHandler(e){
     else if (action === 'saveStock')     out = saveStock(p.pin, p.lot, p.location, p.qtyTon, p.bags);
     else if (action === 'changePin')    out = changePinServer(p.oldPin, p.newPin);
     else if (action === 'importUpsert')  out = importUpsert(p.pin, JSON.parse(p.rows));
+    else if (action === 'getCustomers')  out = getCustomers();
     else out = {error:'unknown action'};
   } catch (err) { out = {error: String(err && err.message ? err.message : err)}; }
   return ContentService.createTextOutput(cb + '(' + JSON.stringify(out) + ')')
@@ -153,7 +154,24 @@ function getRecords(){
   try{ cache.put('records', JSON.stringify(res), 300); }catch(e){}
   return res;
 }
-function bustCache(){ try{ CacheService.getScriptCache().remove('records'); }catch(e){} }
+function bustCache(){ try{ CacheService.getScriptCache().remove('records'); CacheService.getScriptCache().remove('customers'); }catch(e){} }
+
+/* อ่านสเปกลูกค้าจากชีต "Spec" — ส่ง raw rows ให้ client ไป parse เอง (ปรับ parser ได้โดยไม่ต้อง redeploy) */
+function getCustomers(){
+  var cache = CacheService.getScriptCache();
+  var hit = cache.get('customers'); if (hit) return JSON.parse(hit);
+  var sh = ss().getSheetByName('Spec');
+  var out = {rows: []};
+  if (sh && sh.getLastRow() >= 1){
+    var vals = sh.getDataRange().getValues();
+    out.rows = vals.map(function(row){ return row.map(function(v){
+      if (v instanceof Date){ var d=v.getDate(),m=v.getMonth()+1,y=v.getFullYear(); return (d<10?'0':'')+d+'/'+(m<10?'0':'')+m+'/'+y; }
+      return (v===null||v===undefined)?'':String(v);
+    }); });
+  }
+  try{ cache.put('customers', JSON.stringify(out), 300); }catch(e){}
+  return out;
+}
 function buildRecords(){
   var sh = ss().getSheetByName(DATA_SHEET);
   if (!sh || sh.getLastRow() < 2) return {rows:[], spec:spec()};
