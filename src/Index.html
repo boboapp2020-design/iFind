@@ -120,10 +120,11 @@ input,select{font-family:var(--ff)}
 .card-time .ct-row{font-size:11.5px;color:var(--text-3);line-height:1.6}
 .card-time .ct-row b{font-weight:600;color:var(--text-2)}
 .card-time .ct-by{font-size:11px;color:var(--text-3);margin-top:2px}
-.custpass{margin-top:9px;padding-top:9px;border-top:1px solid var(--border)}
-.custpass .cc-head{font-size:12.5px;font-weight:700;color:var(--text-2);margin-bottom:5px}
-.custpass .cc-row{display:flex;gap:6px;align-items:flex-start;font-size:12px;color:var(--text-2);line-height:1.7}
-.custpass .cc-ok{color:var(--ok,#1a7a4a);font-weight:800;flex:0 0 auto}
+.custpass{margin-top:11px;padding:10px 12px 11px;border-radius:12px;background:var(--pass-bg);border:1px solid var(--pass-line)}
+.custpass .cc-head{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:var(--pass);margin-bottom:8px}
+.custpass .cc-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--pass);color:#fff;font-size:11px;font-weight:800}
+.custpass .cc-row{display:flex;gap:7px;align-items:baseline;font-size:12.5px;color:var(--text);line-height:1.75}
+.custpass .cc-ok{color:var(--pass);font-weight:800;flex:0 0 auto;font-size:11px}
 .custbox{margin-top:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .custhead{background:var(--surface-2);padding:10px 13px;font-weight:700;font-size:13.5px;color:var(--text)}
 .custhead.none{color:var(--text-3);font-weight:600}
@@ -696,7 +697,7 @@ function cardCust(r){
   var l=passCustomers(r);
   if(!l.length) return '';
   var items=l.map(function(c){return '<div class="cc-row"><span class="cc-ok">✓</span><span>'+esc(c.n)+'</span></div>';}).join('');
-  return '<div class="custpass"><div class="cc-head">🏷 ผ่านสเปกลูกค้า '+l.length+' ราย</div>'+items+'</div>';
+  return '<div class="custpass"><div class="cc-head"><span class="cc-badge">'+l.length+'</span> ลูกค้าที่รับล็อตนี้ได้</div>'+items+'</div>';
 }
 function cardDates(r){
   var out='';
