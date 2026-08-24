@@ -619,9 +619,8 @@ function cardHTML(r){var st=statusOf(r);
 }
 function cardDates(r){
   var out='';
-  if(r.prod)      out+='<div class="ct-row">วันที่ผลิต <b>'+esc(r.prod)+'</b></div>';
-  if(r.recheck)   out+='<div class="ct-row">วันที่ตรวจเช็คซ้ำ <b>'+esc(r.recheck)+'</b></div>';
-  if(r.updatedBy) out+='<div class="ct-by">ผู้วิเคราะห์ '+esc(r.updatedBy)+'</div>';
+  if(r.prod)    out+='<div class="ct-row">วันที่ผลิต <b>'+esc(r.prod)+'</b></div>';
+  if(r.recheck) out+='<div class="ct-row">วันที่ตรวจเช็คซ้ำ <b>'+esc(r.recheck)+'</b></div>';
   return out?'<div class="card-time">'+out+'</div>':'';
 }
 function qcList(){
