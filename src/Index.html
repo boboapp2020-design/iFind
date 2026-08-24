@@ -174,6 +174,10 @@ input,select{font-family:var(--ff)}
 .btn{border-radius:12px;padding:13px;font-weight:600;font-size:15px}
 .btn.primary{background:linear-gradient(150deg,var(--blue),var(--blue-2));color:#fff} .btn.amber{background:linear-gradient(150deg,var(--amber),var(--amber-2));color:#fff}
 .btn.block{width:100%} .btn.ghost{background:var(--surface-2);color:var(--text-2);border:1px solid var(--border);padding:13px 16px}
+.upbtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin:-4px 0 12px;padding:11px;border:1px dashed var(--blue);border-radius:11px;background:var(--surface);color:var(--blue);font-weight:600;font-size:14px}
+.upbtn svg{width:18px;height:18px}
+.pbar{height:10px;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;overflow:hidden}
+.pbar i{display:block;height:100%;background:linear-gradient(90deg,var(--blue),var(--blue-2));transition:width .2s}
 /* ===== SETTINGS (ตาม setting page.png) ===== */
 .set-top{display:flex;align-items:center;gap:10px;padding:26px 20px 4px 84px}
 .set-wm{font-weight:700;font-style:italic;font-size:24px;letter-spacing:-.5px;background:linear-gradient(120deg,var(--amber-2),var(--amber));-webkit-background-clip:text;background-clip:text;color:transparent}
@@ -563,8 +567,133 @@ function renderQC(){
   $('body').innerHTML=
     '<div class="searchbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>'+
     '<input id="q" inputmode="numeric" pattern="[0-9]*" placeholder="ค้นหา Lot ที่จะแก้ไข…" value="'+esc(filters.q)+'" oninput="filters.q=this.value;qcList()"></div>'+
+    '<button class="upbtn" onclick="pickExcel()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 16V4M8 8l4-4 4 4"/><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>อัปโหลด Excel อัปเดตค่าคุณภาพ</button>'+
+    '<input type="file" id="xlsxFile" accept=".xlsx,.xls" style="display:none" onchange="handleExcel(this)">'+
     '<div id="results"></div>';
   qcList();
+}
+
+/* ---------- อัปโหลด Excel: แมทเลข Strike แล้วอัปเดตค่าคุณภาพ ---------- */
+function pickExcel(){ if(!SESSION||SESSION.role!=='qc'){toast('ต้องเข้าสู่ระบบ QC',true);return;} $('xlsxFile').click(); }
+function ensureXLSX(cb){
+  if(window.XLSX){cb();return;}
+  var s=document.createElement('script'); s.src='xlsx.mini.min.js';
+  s.onload=function(){cb();};
+  s.onerror=function(){toast('โหลดตัวอ่าน Excel ไม่ได้ (ครั้งแรกต้องออนไลน์)',true);};
+  document.head.appendChild(s);
+}
+function xpad(n){return(n<10?'0':'')+n;}
+function xnum(v){ if(v===null||v===undefined||v==='')return''; if(typeof v==='number')return v; var s=String(v).trim(); if(/^#/.test(s))return''; var n=parseFloat(s); return isNaN(n)?'':n; }
+function xdate(v){ if(v===null||v===undefined||v==='')return'';
+  if(v instanceof Date) return xpad(v.getDate())+'/'+xpad(v.getMonth()+1)+'/'+v.getFullYear();
+  if(typeof v==='number'&&window.XLSX&&XLSX.SSF){var o=XLSX.SSF.parse_date_code(v); if(o&&o.y)return xpad(o.d)+'/'+xpad(o.m)+'/'+o.y;}
+  var s=String(v).trim(); return /^#/.test(s)?'':s; }
+function xtime(v){ if(v===null||v===undefined||v==='')return'';
+  if(v instanceof Date) return xpad(v.getHours())+':'+xpad(v.getMinutes());
+  if(typeof v==='number'&&window.XLSX&&XLSX.SSF){var o=XLSX.SSF.parse_date_code(v); if(o)return xpad(o.H)+':'+xpad(o.M);}
+  var s=String(v).trim(); return /^#/.test(s)?'':s; }
+function parseExcelRows(buf){
+  var wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true});
+  for(var si=0;si<wb.SheetNames.length;si++){
+    var ws=wb.Sheets[wb.SheetNames[si]];
+    var aoa=XLSX.utils.sheet_to_json(ws,{header:1,raw:true,blankrows:false});
+    var hi=-1;
+    for(var i=0;i<Math.min(aoa.length,10);i++){ if((aoa[i]||[]).some(function(c){return String(c==null?'':c).trim().toUpperCase()==='STRIKE';})){hi=i;break;} }
+    if(hi<0) continue;
+    var H=aoa[hi].map(function(c){return String(c==null?'':c).trim();});
+    var up=function(s){return s.toUpperCase();};
+    function col(pred){ for(var j=0;j<H.length;j++){ if(pred(H[j],up(H[j]))) return j; } return -1; }
+    var iStrike=col(function(h,u){return u==='STRIKE';});
+    if(iStrike<0) continue;
+    var iProd=col(function(h){return h.indexOf('วันที่ผลิต')>=0;});
+    var iPol=col(function(h,u){return u.indexOf('POL')>=0;});
+    var iColor=col(function(h,u){return u.indexOf('COLOUR')>=0||u.indexOf('COLOR')>=0;});
+    var iMoist=col(function(h){return h.indexOf('Moisture')>=0&&h.indexOf('หลัง')>=0;});
+    if(iMoist<0) iMoist=col(function(h){return h.indexOf('หลังอบ')>=0;});
+    var iInvert=col(function(h,u){return u.indexOf('RS')>=0;});
+    var iMA=col(function(h,u){return u==='MA';});
+    var iAsh=col(function(h,u){return u.indexOf('ASH')>=0;});
+    var iSed=col(function(h,u){return u.indexOf('SEDIMENT')>=0;});
+    var iGrade=col(function(h){return h.indexOf('สรุปผล')>=0;});
+    var iAnalyst=col(function(h){return h.indexOf('ผู้วิเคราะห์')>=0;});
+    var iTime=col(function(h){return h.indexOf('เวลา')>=0;});
+    var g=function(row,idx){return idx>=0?row[idx]:'';};
+    var rows=[];
+    for(var r=hi+1;r<aoa.length;r++){
+      var row=aoa[r]; if(!row) continue;
+      var lot=String(g(row,iStrike)==null?'':g(row,iStrike)).trim();
+      if(!lot||isNaN(+lot)) continue;
+      var prod=xdate(g(row,iProd)), tm=xtime(g(row,iTime));
+      var gv=String(g(row,iGrade)==null?'':g(row,iGrade)).trim(); if(/^#/.test(gv))gv='';
+      var av=String(g(row,iAnalyst)==null?'':g(row,iAnalyst)).trim(); if(/^#/.test(av))av='';
+      rows.push({lot:lot,grade:gv,prod:prod,color:xnum(g(row,iColor)),pol:xnum(g(row,iPol)),
+        moist:xnum(g(row,iMoist)),invert:xnum(g(row,iInvert)),ma:xnum(g(row,iMA)),ash:xnum(g(row,iAsh)),
+        sediment:xnum(g(row,iSed)),analyst:av,updatedAt:(prod+(tm?' '+tm:'')).trim()});
+    }
+    if(rows.length) return rows;
+  }
+  return [];
+}
+function handleExcel(input){
+  var f=input.files&&input.files[0]; input.value=''; if(!f) return;
+  toast('กำลังอ่านไฟล์…');
+  ensureXLSX(function(){
+    var rd=new FileReader();
+    rd.onload=function(){ try{ var rows=parseExcelRows(rd.result);
+        if(!rows.length){toast('ไม่พบข้อมูล Strike ในไฟล์',true);return;} confirmImport(rows);
+      }catch(err){ toast('อ่านไฟล์ไม่ได้: '+(err&&err.message||err),true); } };
+    rd.onerror=function(){toast('อ่านไฟล์ไม่ได้',true);};
+    rd.readAsArrayBuffer(f);
+  });
+}
+function confirmImport(rows){
+  window.__imp=rows;
+  $('panel').innerHTML='<div class="grab"></div><button class="sheetx" onclick="closeSheet()">✕</button>'+
+    '<div style="font-size:17px;font-weight:700;padding:8px 0 8px">อัปโหลดค่าคุณภาพ</div>'+
+    '<div style="color:var(--text-2);font-size:14px;line-height:1.75;padding-bottom:16px">'+
+      'พบ <b style="color:var(--text)">'+rows.length+'</b> แถวในไฟล์<br>'+
+      'ระบบจะ<b>แมทกับเลข Strike</b> แล้วอัปเดตค่าคุณภาพ<br>'+
+      '• Strike ที่มีอยู่แล้ว → อัปเดตค่าใหม่ทับ<br>'+
+      '• Strike ใหม่ → เพิ่มเข้าไป<br>'+
+      '<span style="color:var(--text-3);font-size:13px">ตำแหน่ง / สต๊อก / ลูกค้า ที่คลังกรอกไว้ จะไม่ถูกลบ</span>'+
+    '</div>'+
+    '<button class="btn primary block" onclick="runImport(window.__imp)">อัปเดตข้อมูล '+rows.length+' แถว</button>';
+  openSheet();
+}
+function showImportProgress(done,total){
+  var pct=total?Math.round(done/total*100):0;
+  $('panel').innerHTML='<div class="grab"></div>'+
+    '<div style="font-size:17px;font-weight:700;padding:8px 0 14px">กำลังอัปเดตข้อมูล…</div>'+
+    '<div class="pbar"><i style="width:'+pct+'%"></i></div>'+
+    '<div style="text-align:center;color:var(--text-2);font-size:13px;padding:12px 0 6px">'+done+' / '+total+' แถว ('+pct+'%)</div>'+
+    '<div style="text-align:center;color:var(--text-3);font-size:12px">กรุณาอย่าปิดแอประหว่างอัปเดต</div>';
+  openSheet();
+}
+var IMPORT_ORDER=['lot','grade','prod','color','pol','moist','invert','ma','ash','sediment','analyst','updatedAt'];
+function runImport(rows){
+  if(!SESSION||SESSION.role!=='qc'){toast('ต้องเข้าสู่ระบบ QC',true);return;}
+  var CH=40, total=rows.length, chunks=[], done=0, sumU=0, sumA=0, idx=0;
+  for(var i=0;i<total;i+=CH) chunks.push(rows.slice(i,i+CH).map(function(rec){return IMPORT_ORDER.map(function(k){return rec[k];});}));
+  showImportProgress(0,total);
+  function next(){
+    if(idx>=chunks.length){ finishImport(sumU,sumA); return; }
+    var cur=chunks[idx];
+    google.script.run.withSuccessHandler(function(r){
+      if(r&&r.ok){ sumU+=r.updated||0; sumA+=r.added||0; }
+      done+=cur.length; idx++; showImportProgress(done,total); next();
+    }).withFailureHandler(function(e){
+      closeSheet(); toast('อัปโหลดหยุดที่ '+done+'/'+total+': '+(e&&e.message||e),true);
+    }).importUpsert(SESSION.pin, cur);
+  }
+  next();
+}
+function finishImport(u,a){
+  lastFetch=0; try{localStorage.removeItem('ifind_cache');}catch(e){}
+  google.script.run.withSuccessHandler(function(res){
+    SPEC=res.spec; RECORDS=res.rows.map(cleanRef); lastFetch=Date.now();
+    try{localStorage.setItem('ifind_cache',JSON.stringify({spec:SPEC,rows:RECORDS}));}catch(e){}
+    closeSheet(); shellView=null; render(); toast('✓ อัปเดต '+u+' · เพิ่ม '+a+' รายการ');
+  }).withFailureHandler(function(){ closeSheet(); shellView=null; render(); toast('อัปเดตแล้ว '+u+'+'+a+' — โหลดใหม่ไม่สำเร็จ',true); }).getRecords();
 }
 function openDetail(le){
   var lot=decodeURIComponent(le);var r=RECORDS.filter(function(x){return x.lot===lot;})[0];if(!r)return;

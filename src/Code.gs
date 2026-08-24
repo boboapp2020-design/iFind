@@ -60,6 +60,7 @@ function apiHandler(e){
     else if (action === 'saveQC')        out = saveQC(p.pin, JSON.parse(p.rec));
     else if (action === 'saveStock')     out = saveStock(p.pin, p.lot, p.location, p.qtyTon, p.bags);
     else if (action === 'changePin')    out = changePinServer(p.oldPin, p.newPin);
+    else if (action === 'importUpsert')  out = importUpsert(p.pin, JSON.parse(p.rows));
     else out = {error:'unknown action'};
   } catch (err) { out = {error: String(err && err.message ? err.message : err)}; }
   return ContentService.createTextOutput(cb + '(' + JSON.stringify(out) + ')')
@@ -218,6 +219,68 @@ function saveStock(pin, lot, location, qtyTon, bags){
   sh.getRange(rowIdx,COL.updatedAt).setValue(new Date());
   bustCache();
   return {ok:true};
+}
+
+/* =================================================================
+ *  IMPORT — อัปโหลด Excel: แมทเลข Strike แล้วอัปเดตค่าคุณภาพ (QC เท่านั้น)
+ *  - Strike ที่มีอยู่แล้ว → อัปเดตเฉพาะคอลัมน์คุณภาพ (คงตำแหน่ง/สต๊อก/ลูกค้าเดิม)
+ *  - Strike ใหม่ → เพิ่มแถวใหม่
+ *  รับข้อมูลทีละก้อน (chunk) จากฝั่ง client เพื่อไม่ให้ URL ยาวเกิน
+ * ================================================================= */
+var IMPORT_ORDER = ['lot','grade','prod','color','pol','moist','invert','ma','ash','sediment','analyst','updatedAt'];
+function importUpsert(pin, rows){
+  var u = requireRole(pin, 'qc');
+  if (!rows || !rows.length) return {ok:true, updated:0, added:0};
+  // rows มาเป็น array ตำแหน่ง (ประหยัดความยาว URL) → แปลงกลับเป็น object
+  rows = rows.map(function(a){
+    if (a && !Array.isArray(a)) return a;               // เผื่อส่งมาเป็น object
+    var rec = {}; for (var k=0;k<IMPORT_ORDER.length;k++) rec[IMPORT_ORDER[k]] = a[k];
+    return rec;
+  });
+  var sh = ss().getSheetByName(DATA_SHEET);
+  var last = sh.getLastRow();
+  var map = {};
+  if (last >= 2){
+    var col = sh.getRange(2, COL.lot, last-1, 1).getValues();
+    for (var i=0;i<col.length;i++){ var s=String(col[i][0]).trim(); if(s) map[s]=i+2; }
+  }
+  var sp = spec(), now = new Date(), updated = 0, appended = [];
+  function writeQuality(rng, rec, status){
+    rng.getCell(1,COL.grade).setValue(rec.grade||'');
+    if (rec.prod) rng.getCell(1,COL.prod).setValue(rec.prod);
+    rng.getCell(1,COL.color).setValue(numOrBlank(rec.color));
+    rng.getCell(1,COL.pol).setValue(numOrBlank(rec.pol));
+    rng.getCell(1,COL.moist).setValue(numOrBlank(rec.moist));
+    rng.getCell(1,COL.invert).setValue(numOrBlank(rec.invert));
+    rng.getCell(1,COL.ma).setValue(numOrBlank(rec.ma));
+    rng.getCell(1,COL.ash).setValue(numOrBlank(rec.ash));
+    rng.getCell(1,COL.sediment).setValue(numOrBlank(rec.sediment));
+    rng.getCell(1,COL.status).setValue(status);
+    rng.getCell(1,COL.updatedBy).setValue(rec.analyst ? String(rec.analyst) : u.label);
+    rng.getCell(1,COL.updatedAt).setValue(rec.updatedAt || now);
+  }
+  rows.forEach(function(rec){
+    var lot = String(rec.lot||'').trim(); if(!lot) return;
+    var status = evalStatus(rec, sp);
+    if (map[lot]){
+      writeQuality(sh.getRange(map[lot],1,1,20), rec, status);
+      updated++;
+    } else {
+      var row = []; for (var k=0;k<20;k++) row[k]='';
+      row[COL.lot-1]=lot;               row[COL.grade-1]=rec.grade||'';
+      row[COL.prod-1]=rec.prod||'';     row[COL.color-1]=numOrBlank(rec.color);
+      row[COL.pol-1]=numOrBlank(rec.pol);       row[COL.moist-1]=numOrBlank(rec.moist);
+      row[COL.invert-1]=numOrBlank(rec.invert); row[COL.ma-1]=numOrBlank(rec.ma);
+      row[COL.ash-1]=numOrBlank(rec.ash);       row[COL.sediment-1]=numOrBlank(rec.sediment);
+      row[COL.status-1]=status;         row[COL.source-1]='อัปโหลด';
+      row[COL.updatedBy-1]=rec.analyst?String(rec.analyst):u.label;
+      row[COL.updatedAt-1]=rec.updatedAt || now;
+      appended.push(row);
+    }
+  });
+  if (appended.length) sh.getRange(sh.getLastRow()+1, 1, appended.length, 20).setValues(appended);
+  bustCache();
+  return {ok:true, updated:updated, added:appended.length};
 }
 
 /* =================================================================
