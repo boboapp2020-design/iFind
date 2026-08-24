@@ -120,9 +120,10 @@ input,select{font-family:var(--ff)}
 .card-time .ct-row{font-size:11.5px;color:var(--text-3);line-height:1.6}
 .card-time .ct-row b{font-weight:600;color:var(--text-2)}
 .card-time .ct-by{font-size:11px;color:var(--text-3);margin-top:2px}
-.custpass{margin-top:9px;padding-top:9px;border-top:1px solid var(--border);font-size:12.5px;color:var(--ok,#1a7a4a)}
-.custpass b{font-weight:800}
-.custpass .tap{color:var(--text-3);font-weight:400}
+.custpass{margin-top:9px;padding-top:9px;border-top:1px solid var(--border)}
+.custpass .cc-head{font-size:12.5px;font-weight:700;color:var(--text-2);margin-bottom:5px}
+.custpass .cc-row{display:flex;gap:6px;align-items:flex-start;font-size:12px;color:var(--text-2);line-height:1.7}
+.custpass .cc-ok{color:var(--ok,#1a7a4a);font-weight:800;flex:0 0 auto}
 .custbox{margin-top:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
 .custhead{background:var(--surface-2);padding:10px 13px;font-weight:700;font-size:13.5px;color:var(--text)}
 .custhead.none{color:var(--text-3);font-weight:600}
@@ -737,8 +738,10 @@ function cardHTML(r){var st=statusOf(r);
     '</div>';
 }
 function cardCust(r){
-  var n=passCustomers(r).length;
-  return n?'<div class="custpass">🏷 ผ่านสเปกลูกค้า <b>'+n+'</b> ราย <span class="tap">— แตะดูรายชื่อ</span></div>':'';
+  var l=passCustomers(r);
+  if(!l.length) return '';
+  var items=l.map(function(c){return '<div class="cc-row"><span class="cc-ok">✓</span><span>'+esc(c.n)+'</span></div>';}).join('');
+  return '<div class="custpass"><div class="cc-head">🏷 ผ่านสเปกลูกค้า '+l.length+' ราย</div>'+items+'</div>';
 }
 function cardDates(r){
   var out='';
