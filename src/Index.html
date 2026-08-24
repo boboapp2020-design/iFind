@@ -120,6 +120,15 @@ input,select{font-family:var(--ff)}
 .card-time .ct-row{font-size:11.5px;color:var(--text-3);line-height:1.6}
 .card-time .ct-row b{font-weight:600;color:var(--text-2)}
 .card-time .ct-by{font-size:11px;color:var(--text-3);margin-top:2px}
+.custpass{margin-top:9px;padding-top:9px;border-top:1px solid var(--border);font-size:12.5px;color:var(--ok,#1a7a4a)}
+.custpass b{font-weight:800}
+.custpass .tap{color:var(--text-3);font-weight:400}
+.custbox{margin-top:16px;border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.custhead{background:var(--surface-2);padding:10px 13px;font-weight:700;font-size:13.5px;color:var(--text)}
+.custhead.none{color:var(--text-3);font-weight:600}
+.custitem{display:flex;align-items:flex-start;gap:8px;padding:9px 13px;border-top:1px solid var(--border);font-size:13px;color:var(--text-2)}
+.custitem .cok{color:var(--ok,#1a7a4a);font-weight:800}
+.custitem .cn small{color:var(--text-3);font-weight:400}
 .pill{font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px;margin-left:auto;align-self:center;display:inline-flex;gap:5px;align-items:center}
 .pill.pass{color:var(--pass);background:var(--pass-bg);border:1px solid var(--pass-line)}
 .pill.warn{color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-line)}
@@ -508,6 +517,60 @@ function statusOf(r){var c=checks(r),f=0,n=0;['color','pol','moist','invert','ma
   if(n===0)return'';if(f===0)return'pass';if(f===1)return'warn';return'fail';}
 var STL={pass:'ผ่านสเปก',warn:'เฝ้าระวัง',fail:'ไม่ผ่าน','':'ยังไม่ครบ'};
 
+/* ---------- สเปกลูกค้า: เทียบค่าจริงของ Strike ว่าผ่านลูกค้าเจ้าไหน ----------
+   cmax=สีสูงสุด cmin=สีต่ำสุด pmin=Pol ต่ำสุด momax=ชื้นสูงสุด ivmax=Invert สูงสุด
+   mamin/mamax=ช่วง MA sdmax=Sediment สูงสุด (null=ไม่กำหนด) t=ชนิดน้ำตาล(เกรด) */
+var CUSTOMERS=[
+  {n:"Hoi tien phat",t:"DCR",cmax:1600,pmin:99.00,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
+  {n:"Sucden Asia",t:"DCR",cmin:300,cmax:800,pmin:99.00,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
+  {n:"SOPEX",t:"DCR",cmax:1200,pmin:99.00,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
+  {n:"Hoi tien phat",t:"white",cmax:400,pmin:99.0,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
+  {n:"VILITAS THAI BINH COMPANY LIMITED",t:"DCR",cmin:401,pmin:99.00,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
+  {n:"Wilmar Sugar Pte.Lte.",t:"DCR",cmax:1200,pmin:99.00,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
+  {n:"SOPEX COMMODITY SOLUTIONS",t:"Organic",cmax:500,pmin:99.50,momax:0.10,ivmax:0.80,mamin:0.6,mamax:1.1},
+  {n:"AGRO'NOVAE INDUSTRIE",t:"Organic",cmax:450,pmin:99.50,momax:0.10,ivmax:0.80,mamin:0.6,mamax:1.1},
+  {n:"VILITAS THAI BINH COMPANY LIMITED",t:"VHP",cmax:2000,pmin:98.50,momax:0.30,ivmax:0.80,mamin:0.6,mamax:1.2},
+  {n:"HOI TIEN PHAT IMPORT-EXPORT CO.,LTD",t:"DCR",cmin:401,pmin:99.0,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
+  {n:"LAM SON SUGAR CANE JOINT STOCK CORPORATION",t:"VHP",cmax:2000,pmin:98.80,momax:0.30,ivmax:0.80,mamin:0.6,mamax:1.2},
+  {n:"Minh Phuc Service Trading Investment JSC",t:"DCR",cmin:800,pmin:99.00,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
+  {n:"Global Mind Agriculture Pte. Ltd",t:"Golden Granulated",cmin:401,pmin:99.00,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
+  {n:"HOI TIEN PHAT IMPORT-EXPORT CO.,LTD",t:"VHP",cmax:2000,pmin:98.50,momax:0.30,ivmax:0.80,mamin:0.6,mamax:1.2},
+  {n:"VIET LIFE TRADING AND SERVICES JSC",t:"VHP",cmax:2000,pmin:98.50,momax:0.30,ivmax:0.80,mamin:0.6,mamax:1.2},
+  {n:"Andean Life BV",t:"Organic",cmax:500,pmin:99.20,momax:0.10,ivmax:0.80,mamin:0.75,mamax:1.00,sdmax:500},
+  {n:"Mitsui & Co.,Ltd.",t:"Organic",cmax:500,pmin:99.20,momax:0.15,ivmax:null,mamin:0.75,mamax:1.00},
+  {n:"VIET HAUS COMPANY LIMITED",t:"Organic",cmax:500,pmin:99.20,momax:0.10,ivmax:0.80,mamin:0.70,mamax:1.00},
+  {n:"ANBIO INTE CO.,LTD",t:"Organic",cmax:500,pmin:99.00,momax:0.15,ivmax:0.80,mamin:0.75,mamax:1.2},
+  {n:"COFCO International Singapore Pte.Ltd.",t:"Organic",cmax:500,pmin:99.20,momax:0.10,ivmax:0.80,mamin:0.70,mamax:1.00},
+  {n:"BOCA SAL a private Limited Company",t:"Organic",cmax:500,pmin:99.20,momax:0.10,ivmax:0.80,mamin:0.75,mamax:1.2},
+  {n:"HOI TIEN PHAT IMPORT-EXPORT CO.,LTD",t:"white",cmax:800,pmin:99.00,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
+  {n:"MINH TUAN DTT COMPANY LIMITED",t:"DCR",cmin:401,pmin:99.00,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
+  {n:"MINH TUAN DTT COMPANY LIMITED",t:"VHP",cmax:2000,pmin:98.50,momax:0.30,ivmax:0.80,mamin:0.6,mamax:1.2},
+  {n:"HA MINH ONE MEMBER COMPANY LIMITED",t:"DCR",cmin:401,pmin:99.00,momax:0.20,ivmax:0.80,mamin:0.75,mamax:1.2},
+  {n:"Phan Nguyen International Investment & Trade JSC",t:"Organic",cmax:500,pmin:99.20,momax:0.10,ivmax:0.80,mamin:0.70,mamax:1.00}
+];
+function passCustomers(r){
+  var g=String(r.grade||'').toLowerCase().trim(); if(!g) return [];
+  function has(k){return r[k]!==''&&r[k]!=null&&!isNaN(+r[k]);}
+  var col=+r.color,pol=+r.pol,mo=+r.moist,iv=+r.invert,ma=+r.ma,sd=+r.sediment;
+  return CUSTOMERS.filter(function(c){
+    var ct=c.t.toLowerCase();
+    if(ct.indexOf(g)<0&&g.indexOf(ct)<0) return false;         // ต้องเป็นชนิดน้ำตาลเดียวกัน
+    if(has('color')){ if(c.cmax!=null&&col>c.cmax)return false; if(c.cmin!=null&&col<c.cmin)return false; }
+    if(has('pol')&&c.pmin!=null&&pol<c.pmin) return false;
+    if(has('moist')&&c.momax!=null&&mo>c.momax) return false;
+    if(has('invert')&&c.ivmax!=null&&iv>c.ivmax) return false;
+    if(has('ma')){ if(c.mamin!=null&&ma<c.mamin)return false; if(c.mamax!=null&&ma>c.mamax)return false; }
+    if(has('sediment')&&c.sdmax!=null&&sd>c.sdmax) return false;
+    return true;
+  });
+}
+function custDetailHTML(r){
+  var list=passCustomers(r);
+  if(!list.length) return '<div class="custbox"><div class="custhead none">ยังไม่ผ่านสเปกลูกค้ารายใด (เกรด '+esc(r.grade||'-')+')</div></div>';
+  var items=list.map(function(c){return '<div class="custitem"><span class="cok">✓</span><span class="cn">'+esc(c.n)+'<small> · '+esc(c.t)+'</small></span></div>';}).join('');
+  return '<div class="custbox"><div class="custhead">🏷 ลูกค้าที่รับล็อตนี้ได้ ('+list.length+' ราย)</div>'+items+'</div>';
+}
+
 function warehouseRows(){
   var q=filters.q.trim().toLowerCase();
   return RECORDS.filter(function(r){
@@ -570,8 +633,13 @@ function cardHTML(r){var st=statusOf(r);
     '<div class="metric"><span class="k">Ash</span><span class="v">'+fmt(r.ash)+'</span></div>'+
     '<div class="metric"><span class="k">คงเหลือ</span><span class="v">'+(r.qtyTon!==''?fmt(r.qtyTon)+'<small>ต.</small>':'–')+'</span></div>'+
     '<span class="pill '+(st||'warn')+'"><span class="d"></span>'+STL[st]+'</span></div>'+
+    cardCust(r)+
     cardDates(r)+
     '</div>';
+}
+function cardCust(r){
+  var n=passCustomers(r).length;
+  return n?'<div class="custpass">🏷 ผ่านสเปกลูกค้า <b>'+n+'</b> ราย <span class="tap">— แตะดูรายชื่อ</span></div>':'';
 }
 function cardDates(r){
   var out='';
@@ -733,7 +801,7 @@ function openDetail(le){
     '<div class="verdict '+(st||'warn')+'">'+(st==='pass'?'✓ ผ่านเกณฑ์คุณภาพทุกข้อ':st==='fail'?'✕ มีค่าเกินเกณฑ์ — ตรวจก่อนใช้':st==='warn'?'⚠ มี 1 ค่าน่าเฝ้าระวัง':'ยังกรอกไม่ครบ')+'</div>'+
     line('สี Color',fmt(r.color),'ICU','≤ '+SPEC.COLOR_MAX,c.color,r.color!=='')+line('Pol',fmt(r.pol),'%','≥ '+SPEC.POL_MIN,c.pol,r.pol!=='')+
     line('ความชื้น',fmt(r.moist),'%','≤ '+SPEC.MOIST_MAX,c.moist,r.moist!=='')+line('อินเวิร์ต',fmt(r.invert),'%','≤ '+SPEC.INVERT_MAX,c.invert,r.invert!=='')+
-    line('M.A.',fmt(r.ma),'mm',SPEC.MA_MIN+'–'+SPEC.MA_MAX,c.ma,r.ma!=='')+
+    line('M.A.',fmt(r.ma),'mm',SPEC.MA_MIN+'–'+SPEC.MA_MAX,c.ma,r.ma!=='')+custDetailHTML(r)+
     '<div class="wboxes"><div class="wbox"><div class="k">ตำแหน่งเก็บ</div><div class="v">'+(r.location||'–')+'</div></div><div class="wbox"><div class="k">คงเหลือ</div><div class="v">'+(r.qtyTon!==''?fmt(r.qtyTon)+' ตัน':'–')+'</div></div></div>'+eb;
   openSheet();
 }
