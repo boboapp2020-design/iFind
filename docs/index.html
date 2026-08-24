@@ -101,6 +101,9 @@ input,select{font-family:var(--ff)}
 .arow{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 .field label{display:block;font-size:11px;color:var(--text-2);margin-bottom:4px}
 .field input{width:100%;border:1px solid var(--border-strong);background:var(--surface);border-radius:9px;padding:9px 10px;font-family:var(--fm);font-size:14px;color:var(--text)}
+.pinform label{display:block;font-size:12px;font-weight:600;color:var(--text-2);margin-bottom:5px}
+.pinform .ff{display:block;width:100%;box-sizing:border-box;border:1px solid var(--border-strong);background:var(--surface);border-radius:9px;padding:11px 12px;font-family:var(--fm);font-size:15px;color:var(--text)}
+.pinform .ff:focus{outline:2px solid var(--blue);outline-offset:1px}
 .listhead{display:flex;justify-content:space-between;align-items:baseline;margin:2px 2px 9px}
 .listhead b{font-size:13px} .listhead small{font-size:12px;color:var(--text-2)}
 
@@ -757,10 +760,10 @@ function openChangePin(){
   if(!SESSION||SESSION.role!=='qc'){toast('กรุณาเข้าสู่ระบบ QC ก่อน',true);return;}
   $('panel').innerHTML='<div class="grab"></div><button class="sheetx" onclick="closeSheet()">✕</button>'+
     '<div style="font-size:17px;font-weight:700;padding:8px 0 14px">เปลี่ยน PIN</div>'+
-    '<div style="display:flex;flex-direction:column;gap:12px;padding-bottom:16px">'+
-    '<div><label style="font-size:13px;font-weight:600;color:var(--text-2)">PIN เดิม</label><input id="cpOld" type="password" maxlength="4" inputmode="numeric" pattern="[0-9]*" class="ff" placeholder="กรอก PIN เดิม 4 หลัก"></div>'+
-    '<div><label style="font-size:13px;font-weight:600;color:var(--text-2)">PIN ใหม่</label><input id="cpNew" type="password" maxlength="4" inputmode="numeric" pattern="[0-9]*" class="ff" placeholder="กรอก PIN ใหม่ 4 หลัก"></div>'+
-    '<div><label style="font-size:13px;font-weight:600;color:var(--text-2)">ยืนยัน PIN ใหม่</label><input id="cpConf" type="password" maxlength="4" inputmode="numeric" pattern="[0-9]*" class="ff" placeholder="กรอก PIN ใหม่อีกครั้ง"></div>'+
+    '<div class="pinform" style="display:flex;flex-direction:column;gap:12px;padding-bottom:16px">'+
+    '<div><label>PIN เดิม</label><input id="cpOld" type="password" maxlength="4" inputmode="numeric" pattern="[0-9]*" class="ff" placeholder="กรอก PIN เดิม 4 หลัก"></div>'+
+    '<div><label>PIN ใหม่</label><input id="cpNew" type="password" maxlength="4" inputmode="numeric" pattern="[0-9]*" class="ff" placeholder="กรอก PIN ใหม่ 4 หลัก"></div>'+
+    '<div><label>ยืนยัน PIN ใหม่</label><input id="cpConf" type="password" maxlength="4" inputmode="numeric" pattern="[0-9]*" class="ff" placeholder="กรอก PIN ใหม่อีกครั้ง"></div>'+
     '<div id="cpErr" style="color:var(--fail);font-size:13px;min-height:18px;font-weight:600"></div>'+
     '<button class="btn primary block" onclick="submitChangePin()">บันทึก PIN ใหม่</button></div>';
   openSheet();setTimeout(function(){focusId('cpOld');},300);
