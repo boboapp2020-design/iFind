@@ -22,8 +22,10 @@ var COL = {
   ma:9, ash:10, sediment:11,                // I J K
   status:12, location:13, qtyTon:14, bags:15, // L M N O
   customer:16, certNo:17, source:18,        // P Q R
-  updatedBy:19, updatedAt:20                // S T
+  updatedBy:19, updatedAt:20,               // S T
+  recheck:21                                // U = วันที่สุ่มค่าสีใหม่ (วันตรวจเช็คซ้ำ)
 };
+var DATA_COLS = 21;   // จำนวนคอลัมน์ที่ใช้จริงใน DATA
 var HEADERS = ['Lot (Strike)','เกรด','วันผลิต','Best before','สี Color (ICU)','Pol (%)',
   'ความชื้น (%)','อินเวิร์ต (%)','M.A. (mm)','Conductivity Ash','Sediment','สถานะ Spec',
   'ตำแหน่งเก็บ','คงเหลือ (ตัน)','จำนวนกระสอบ','ลูกค้า','Cert No.','แผ่นที่มา',
@@ -156,7 +158,7 @@ function buildRecords(){
   var sh = ss().getSheetByName(DATA_SHEET);
   if (!sh || sh.getLastRow() < 2) return {rows:[], spec:spec()};
   var last = sh.getLastRow();
-  var vals = sh.getRange(2,1,last-1,20).getValues();
+  var vals = sh.getRange(2,1,last-1,DATA_COLS).getValues();
   var sp = spec();
   var rows = vals.filter(function(r){ return r[COL.lot-1] !== '' ; }).map(function(r){
     var o = {
@@ -165,7 +167,8 @@ function buildRecords(){
       invert:num(r[COL.invert-1]), ma:num(r[COL.ma-1]), ash:num(r[COL.ash-1]), sediment:num(r[COL.sediment-1]),
       location:str(r[COL.location-1]), qtyTon:num(r[COL.qtyTon-1]), bags:num(r[COL.bags-1]),
       customer:str(r[COL.customer-1]), certNo:str(r[COL.certNo-1]), source:str(r[COL.source-1]),
-      updatedBy:str(r[COL.updatedBy-1]), updatedAt:dstr(r[COL.updatedAt-1])
+      updatedBy:str(r[COL.updatedBy-1]), updatedAt:dstr(r[COL.updatedAt-1]),
+      recheck:dstr(r[COL.recheck-1])
     };
     o.status = evalStatus(o, sp);
     return o;
@@ -227,7 +230,7 @@ function saveStock(pin, lot, location, qtyTon, bags){
  *  - Strike ใหม่ → เพิ่มแถวใหม่
  *  รับข้อมูลทีละก้อน (chunk) จากฝั่ง client เพื่อไม่ให้ URL ยาวเกิน
  * ================================================================= */
-var IMPORT_ORDER = ['lot','grade','prod','color','pol','moist','invert','ma','ash','sediment','analyst','updatedAt'];
+var IMPORT_ORDER = ['lot','grade','prod','color','pol','moist','invert','ma','ash','sediment','analyst','updatedAt','recheck'];
 function importUpsert(pin, rows){
   var u = requireRole(pin, 'qc');
   if (!rows || !rows.length) return {ok:true, updated:0, added:0};
@@ -256,6 +259,7 @@ function importUpsert(pin, rows){
     rng.getCell(1,COL.ash).setValue(numOrBlank(rec.ash));
     rng.getCell(1,COL.sediment).setValue(numOrBlank(rec.sediment));
     rng.getCell(1,COL.status).setValue(status);
+    if (rec.recheck) rng.getCell(1,COL.recheck).setValue(rec.recheck);
     rng.getCell(1,COL.updatedBy).setValue(rec.analyst ? String(rec.analyst) : u.label);
     rng.getCell(1,COL.updatedAt).setValue(rec.updatedAt || now);
   }
@@ -263,22 +267,23 @@ function importUpsert(pin, rows){
     var lot = String(rec.lot||'').trim(); if(!lot) return;
     var status = evalStatus(rec, sp);
     if (map[lot]){
-      writeQuality(sh.getRange(map[lot],1,1,20), rec, status);
+      writeQuality(sh.getRange(map[lot],1,1,DATA_COLS), rec, status);
       updated++;
     } else {
-      var row = []; for (var k=0;k<20;k++) row[k]='';
+      var row = []; for (var k=0;k<DATA_COLS;k++) row[k]='';
       row[COL.lot-1]=lot;               row[COL.grade-1]=rec.grade||'';
       row[COL.prod-1]=rec.prod||'';     row[COL.color-1]=numOrBlank(rec.color);
       row[COL.pol-1]=numOrBlank(rec.pol);       row[COL.moist-1]=numOrBlank(rec.moist);
       row[COL.invert-1]=numOrBlank(rec.invert); row[COL.ma-1]=numOrBlank(rec.ma);
       row[COL.ash-1]=numOrBlank(rec.ash);       row[COL.sediment-1]=numOrBlank(rec.sediment);
       row[COL.status-1]=status;         row[COL.source-1]='อัปโหลด';
+      row[COL.recheck-1]=rec.recheck||'';
       row[COL.updatedBy-1]=rec.analyst?String(rec.analyst):u.label;
       row[COL.updatedAt-1]=rec.updatedAt || now;
       appended.push(row);
     }
   });
-  if (appended.length) sh.getRange(sh.getLastRow()+1, 1, appended.length, 20).setValues(appended);
+  if (appended.length) sh.getRange(sh.getLastRow()+1, 1, appended.length, DATA_COLS).setValues(appended);
   bustCache();
   return {ok:true, updated:updated, added:appended.length};
 }

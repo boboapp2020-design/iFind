@@ -38,7 +38,7 @@ function _doMigrate2(clearFirst) {
   }
 
   if (clearFirst && data.getLastRow() > 1) {
-    data.getRange(2, 1, data.getLastRow() - 1, 20).clearContent();
+    data.getRange(2, 1, data.getLastRow() - 1, 21).clearContent();
     Logger.log('ลบข้อมูลเดิมทั้งหมดแล้ว');
   }
 
@@ -63,6 +63,7 @@ function _doMigrate2(clearFirst) {
     var sediment = numVal(r[10]);                    // K = Sediment
     var grade    = String(r[16] || '').trim();       // Q = สรุปผล (DCR/Organic/etc)
     var analyst  = String(r[17] || '').trim();       // R = ผู้วิเคราะห์
+    var recheck  = fmtDate(r[21]);                   // V = วันที่สุ่มค่าสีใหม่ (วันตรวจเช็คซ้ำ)
     var dateStr  = fmtDate(r[0]);                    // A = วันที่
     var timeStr  = String(r[3] || '').trim();        // D = เวลา
 
@@ -107,13 +108,14 @@ function _doMigrate2(clearFirst) {
       '',               // Q: Cert No.
       '25 26',          // R: แผ่นที่มา
       analyst || 'ย้ายข้อมูล',  // S: ผู้บันทึก
-      updatedAt         // T: เวลาแก้ไข
+      updatedAt,        // T: เวลาแก้ไข
+      recheck           // U: วันที่สุ่มค่าสีใหม่ (วันตรวจเช็คซ้ำ)
     ]);
   }
 
   if (out.length > 0) {
     var startRow = data.getLastRow() + 1;
-    data.getRange(startRow, 1, out.length, 20).setValues(out);
+    data.getRange(startRow, 1, out.length, 21).setValues(out);
     // ล้างแคชแบบปลอดภัย (ทำงานได้แม้ยังไม่ได้อัปเดต Code.gs เวอร์ชันใหม่)
     try {
       if (typeof bustCache === 'function') bustCache();

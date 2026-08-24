@@ -117,6 +117,9 @@ input,select{font-family:var(--ff)}
 .metric .k{font-size:10px;color:var(--text-3);display:block} .metric .v{font-family:var(--fm);font-size:13.5px;font-weight:600}
 .metric .v small{font-size:10px;color:var(--text-3);font-weight:400}
 .card-time{font-size:11px;color:var(--text-3);margin-top:8px;padding-top:8px;border-top:1px solid var(--border)}
+.card-time .ct-row{font-size:11.5px;color:var(--text-3);line-height:1.6}
+.card-time .ct-row b{font-weight:600;color:var(--text-2)}
+.card-time .ct-by{font-size:11px;color:var(--text-3);margin-top:2px}
 .pill{font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px;margin-left:auto;align-self:center;display:inline-flex;gap:5px;align-items:center}
 .pill.pass{color:var(--pass);background:var(--pass-bg);border:1px solid var(--pass-line)}
 .pill.warn{color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-line)}
@@ -595,8 +598,15 @@ function cardHTML(r){var st=statusOf(r);
     '<div class="metric"><span class="k">Ash</span><span class="v">'+fmt(r.ash)+'</span></div>'+
     '<div class="metric"><span class="k">คงเหลือ</span><span class="v">'+(r.qtyTon!==''?fmt(r.qtyTon)+'<small>ต.</small>':'–')+'</span></div>'+
     '<span class="pill '+(st||'warn')+'"><span class="d"></span>'+STL[st]+'</span></div>'+
-    (r.updatedAt?'<div class="card-time">แก้ไข '+esc(r.updatedAt)+(r.updatedBy?' · '+esc(r.updatedBy):'')+'</div>':'')+
+    cardDates(r)+
     '</div>';
+}
+function cardDates(r){
+  var out='';
+  if(r.prod)      out+='<div class="ct-row">วันที่ผลิต <b>'+esc(r.prod)+'</b></div>';
+  if(r.recheck)   out+='<div class="ct-row">วันที่ตรวจเช็คซ้ำ <b>'+esc(r.recheck)+'</b></div>';
+  if(r.updatedBy) out+='<div class="ct-by">ผู้วิเคราะห์ '+esc(r.updatedBy)+'</div>';
+  return out?'<div class="card-time">'+out+'</div>':'';
 }
 function qcList(){
   var el=$('results');if(!el)return;
@@ -661,6 +671,7 @@ function parseExcelRows(buf){
     var iGrade=col(function(h){return h.indexOf('สรุปผล')>=0;});
     var iAnalyst=col(function(h){return h.indexOf('ผู้วิเคราะห์')>=0;});
     var iTime=col(function(h){return h.indexOf('เวลา')>=0;});
+    var iRecheck=col(function(h){return h.indexOf('สุ่ม')>=0;});   // V = วันที่สุ่มค่าสีใหม่
     var g=function(row,idx){return idx>=0?row[idx]:'';};
     var rows=[];
     for(var r=hi+1;r<aoa.length;r++){
@@ -672,7 +683,8 @@ function parseExcelRows(buf){
       var av=String(g(row,iAnalyst)==null?'':g(row,iAnalyst)).trim(); if(/^#/.test(av))av='';
       rows.push({lot:lot,grade:gv,prod:prod,color:xnum(g(row,iColor)),pol:xnum(g(row,iPol)),
         moist:xnum(g(row,iMoist)),invert:xnum(g(row,iInvert)),ma:xnum(g(row,iMA)),ash:xnum(g(row,iAsh)),
-        sediment:xnum(g(row,iSed)),analyst:av,updatedAt:(prod+(tm?' '+tm:'')).trim()});
+        sediment:xnum(g(row,iSed)),analyst:av,updatedAt:(prod+(tm?' '+tm:'')).trim(),
+        recheck:xdate(g(row,iRecheck))});
     }
     if(rows.length) return rows;
   }
@@ -713,7 +725,7 @@ function showImportProgress(done,total){
     '<div style="text-align:center;color:var(--text-3);font-size:12px">กรุณาอย่าปิดแอประหว่างอัปเดต</div>';
   openSheet();
 }
-var IMPORT_ORDER=['lot','grade','prod','color','pol','moist','invert','ma','ash','sediment','analyst','updatedAt'];
+var IMPORT_ORDER=['lot','grade','prod','color','pol','moist','invert','ma','ash','sediment','analyst','updatedAt','recheck'];
 function runImport(rows){
   if(!SESSION||SESSION.role!=='qc'){toast('ต้องเข้าสู่ระบบ QC',true);return;}
   var CH=40, total=rows.length, chunks=[], done=0, sumU=0, sumA=0, idx=0;
