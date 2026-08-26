@@ -655,7 +655,7 @@ function saveAllCustomers(after){
   google.script.run.withSuccessHandler(function(r){
     if(r&&r.ok){ try{localStorage.setItem('ifind_cust',JSON.stringify(CUSTOMERS));}catch(e){} if($('results'))render(); if(after)after(); }
     else toast((r&&r.error)||'บันทึกไม่สำเร็จ',true);
-  }).withFailureHandler(function(e){toast('บันทึกไม่สำเร็จ: '+(e&&e.message||e),true);}).saveCustomers(SESSION.pin, custAllRows());
+  }).withFailureHandler(function(e){toast('บันทึกไม่สำเร็จ: '+(e&&e.message||e),true);}).saveCustomers(SESSION.pin, CUSTOMERS);
 }
 function _cspec(c){var p=[]; if(c.cmin!=null&&c.cmax!=null)p.push('สี '+c.cmin+'-'+c.cmax); else if(c.cmin!=null)p.push('สี ≥'+c.cmin); else if(c.cmax!=null)p.push('สี ≤'+c.cmax); if(c.pmin!=null)p.push('Pol≥'+c.pmin); if(c.mamin!=null||c.mamax!=null)p.push('MA '+(c.mamin!=null?c.mamin:'')+'-'+(c.mamax!=null?c.mamax:'')); return p.join(' · ');}
 function openCustAdmin(){

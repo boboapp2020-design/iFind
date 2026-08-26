@@ -174,13 +174,30 @@ function getCustomers(){
   return out;
 }
 
-/* บันทึกสเปกลูกค้าจากแอป → เขียนทับชีต "Spec" (QC เท่านั้น) rows=ข้อมูลใต้ header */
+/* บันทึกสเปกลูกค้าจากแอป → เขียนทับชีต "Spec" (QC เท่านั้น)
+   รับข้อมูลแบบย่อ (structured objects) แล้วประกอบแถว 13 คอลัมน์ที่เซิร์ฟเวอร์ (URL สั้น) */
 var SPEC_HEAD = ['Customer Code','Customer','Customer1','Customer2','Color','Polarization','Moisture','Invert Sugar','Target M.A','Conductivity Ash','Sediment','',''];
-function saveCustomers(pin, rows){
+function _sn(v){ return (v===''||v===null||v===undefined||isNaN(+v)) ? null : +v; }
+function custRowFromObj(c, code){
+  var cmin=_sn(c.cmin), cmax=_sn(c.cmax), pmin=_sn(c.pmin), momax=_sn(c.momax),
+      ivmax=_sn(c.ivmax), mamin=_sn(c.mamin), mamax=_sn(c.mamax), sdmax=_sn(c.sdmax);
+  var color = (cmin!=null&&cmax!=null) ? (cmin+'-'+cmax+' ICU')
+            : (cmin!=null ? (cmin+' ICU Min') : (cmax!=null ? (cmax+' ICU Max') : '-'));
+  var ma = (mamin!=null||mamax!=null) ? ((mamin!=null?mamin:'')+' - '+(mamax!=null?mamax:'')+' mm') : '-';
+  var t = String(c.t||'DCR');
+  var typeStr = /sugar/i.test(t) ? t : (t+' Sugar');
+  var name = String(c.n||''), cust1 = name+typeStr;
+  return [code, name, cust1, '-', color,
+    (pmin!=null?pmin+' % Min':'-'), (momax!=null?momax+' % Max':'-'),
+    (ivmax!=null?ivmax+' % Max':'-'), ma, '-',
+    (sdmax!=null?sdmax+' ppm Max':'-'), typeStr, cust1];
+}
+function saveCustomers(pin, custs){
   requireRole(pin, 'qc');
   var sh = ss().getSheetByName('Spec');
   if (!sh) { sh = ss().insertSheet('Spec'); }
-  rows = rows || [];
+  custs = custs || [];
+  var rows = custs.map(function(c, i){ return custRowFromObj(c, i+1); });
   var all = [SPEC_HEAD].concat(rows);
   var oldR = sh.getLastRow(), oldC = sh.getLastColumn();
   if (oldR > 0) sh.getRange(1, 1, oldR, Math.max(oldC, SPEC_HEAD.length)).clearContent();
