@@ -65,6 +65,7 @@ function apiHandler(e){
     else if (action === 'importUpsert')  out = importUpsert(p.pin, JSON.parse(p.rows));
     else if (action === 'getCustomers')  out = getCustomers();
     else if (action === 'saveCustomers') out = saveCustomers(p.pin, JSON.parse(p.rows));
+    else if (action === 'getVersion')    out = getVersion();
     else out = {error:'unknown action'};
   } catch (err) { out = {error: String(err && err.message ? err.message : err)}; }
   return ContentService.createTextOutput(cb + '(' + JSON.stringify(out) + ')')
@@ -192,12 +193,15 @@ function custRowFromObj(c, code){
     (ivmax!=null?ivmax+' % Max':'-'), ma, '-',
     (sdmax!=null?sdmax+' ppm Max':'-'), typeStr, cust1];
 }
+var SPEC_VER = '2026-08-24-saveCust-v2';   // ใช้ตรวจว่า deploy เวอร์ชันล่าสุดหรือยัง (getVersion)
+function getVersion(){ return {ok:true, version: SPEC_VER}; }
 function saveCustomers(pin, custs){
   requireRole(pin, 'qc');
   var sh = ss().getSheetByName('Spec');
   if (!sh) { sh = ss().insertSheet('Spec'); }
   custs = custs || [];
-  var rows = custs.map(function(c, i){ return custRowFromObj(c, i+1); });
+  // รับได้ทั้งแบบย่อ (object) และแบบแถวเต็ม (array) เพื่อกันเวอร์ชัน client ไม่ตรง
+  var rows = custs.map(function(c, i){ return Array.isArray(c) ? c : custRowFromObj(c, i+1); });
   var all = [SPEC_HEAD].concat(rows);
   var oldR = sh.getLastRow(), oldC = sh.getLastColumn();
   if (oldR > 0) sh.getRange(1, 1, oldR, Math.max(oldC, SPEC_HEAD.length)).clearContent();
