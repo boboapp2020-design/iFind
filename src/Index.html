@@ -360,7 +360,7 @@ input,select{font-family:var(--ff)}
 <script>
 var SESSION=null, SPEC=null, RECORDS=[], filters={q:'',grade:'all',colorMin:'',colorMax:'',maMin:'',maMax:''};
 function cleanRef(r){for(var k in r){if(typeof r[k]==='string'&&/^#/.test(r[k]))r[k]='';}return r;}
-var pendingRole=null, pinBuf='', currentRoleView='warehouse';
+var pendingRole=null, pinBuf='', currentRoleView='warehouse', pinNext=null;
 function $(id){return document.getElementById(id);}
 
 function go(scr,fromPop){
@@ -492,7 +492,9 @@ function submitPin(){
   google.script.run.withSuccessHandler(function(r){
     if(!r.ok){$('pinErr').textContent='✕ PIN ไม่ถูกต้อง — กรอกใหม่อีกครั้ง';pinBuf='';drawDots();
       var d=$('pinDots');d.classList.remove('shake');void d.offsetWidth;d.classList.add('shake');return;}
-    SESSION={pin:pinBuf,role:r.role,label:r.label};closePin();startRole(pendingRole);
+    SESSION={pin:pinBuf,role:r.role,label:r.label};closePin();
+    if(pinNext){ var nx=pinNext; pinNext=null; if(nx==='custAdmin'){ openCustAdmin(); return; } }
+    startRole(pendingRole);
   }).withFailureHandler(function(){$('pinErr').textContent='เชื่อมต่อไม่ได้';}).checkPin(pinBuf);
 }
 function closePin(){$('pinSheet').classList.remove('open');}
@@ -659,7 +661,7 @@ function saveAllCustomers(after){
 }
 function _cspec(c){var p=[]; if(c.cmin!=null&&c.cmax!=null)p.push('สี '+c.cmin+'-'+c.cmax); else if(c.cmin!=null)p.push('สี ≥'+c.cmin); else if(c.cmax!=null)p.push('สี ≤'+c.cmax); if(c.pmin!=null)p.push('Pol≥'+c.pmin); if(c.mamin!=null||c.mamax!=null)p.push('MA '+(c.mamin!=null?c.mamin:'')+'-'+(c.mamax!=null?c.mamax:'')); return p.join(' · ');}
 function openCustAdmin(){
-  if(!SESSION||SESSION.role!=='qc'){toast('ต้องเข้าสู่ระบบ QC ก่อนจัดการสเปกลูกค้า',true);return;}
+  if(!SESSION||SESSION.role!=='qc'){ pinNext='custAdmin'; openPin('qc'); return; }   // ให้ใส่ PIN ก่อนเข้าแก้ไข
   var items=CUSTOMERS.map(function(c,i){
     return '<div class="caitem"><div class="cainfo"><b>'+esc(c.n)+'</b><small><span class="catag">'+esc(c.t)+'</span> '+esc(_cspec(c))+'</small></div>'+
       '<button class="caed" onclick="custEdit('+i+')" aria-label="แก้ไข">✎</button>'+
