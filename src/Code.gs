@@ -64,6 +64,7 @@ function apiHandler(e){
     else if (action === 'changePin')    out = changePinServer(p.oldPin, p.newPin);
     else if (action === 'importUpsert')  out = importUpsert(p.pin, JSON.parse(p.rows));
     else if (action === 'getCustomers')  out = getCustomers();
+    else if (action === 'saveCustomers') out = saveCustomers(p.pin, JSON.parse(p.rows));
     else out = {error:'unknown action'};
   } catch (err) { out = {error: String(err && err.message ? err.message : err)}; }
   return ContentService.createTextOutput(cb + '(' + JSON.stringify(out) + ')')
@@ -171,6 +172,21 @@ function getCustomers(){
   }
   try{ cache.put('customers', JSON.stringify(out), 300); }catch(e){}
   return out;
+}
+
+/* บันทึกสเปกลูกค้าจากแอป → เขียนทับชีต "Spec" (QC เท่านั้น) rows=ข้อมูลใต้ header */
+var SPEC_HEAD = ['Customer Code','Customer','Customer1','Customer2','Color','Polarization','Moisture','Invert Sugar','Target M.A','Conductivity Ash','Sediment','',''];
+function saveCustomers(pin, rows){
+  requireRole(pin, 'qc');
+  var sh = ss().getSheetByName('Spec');
+  if (!sh) { sh = ss().insertSheet('Spec'); }
+  rows = rows || [];
+  var all = [SPEC_HEAD].concat(rows);
+  var oldR = sh.getLastRow(), oldC = sh.getLastColumn();
+  if (oldR > 0) sh.getRange(1, 1, oldR, Math.max(oldC, SPEC_HEAD.length)).clearContent();
+  sh.getRange(1, 1, all.length, SPEC_HEAD.length).setValues(all);
+  CacheService.getScriptCache().remove('customers');
+  return {ok:true, count: rows.length};
 }
 function buildRecords(){
   var sh = ss().getSheetByName(DATA_SHEET);

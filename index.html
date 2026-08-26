@@ -131,6 +131,15 @@ input,select{font-family:var(--ff)}
 .custitem{display:flex;align-items:flex-start;gap:8px;padding:9px 13px;border-top:1px solid var(--border);font-size:13px;color:var(--text-2)}
 .custitem .cok{color:var(--ok,#1a7a4a);font-weight:800}
 .custitem .cn small{color:var(--text-3);font-weight:400}
+.cahead{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:6px 0 12px}
+.calist{display:flex;flex-direction:column;gap:8px;padding-bottom:12px;max-height:60vh;overflow:auto}
+.caitem{display:flex;align-items:center;gap:8px;padding:10px 12px;border:1px solid var(--border);border-radius:11px;background:var(--surface)}
+.caitem .cainfo{flex:1;min-width:0}
+.caitem .cainfo b{display:block;font-size:14px;font-weight:700}
+.caitem .cainfo small{display:block;font-size:11.5px;color:var(--text-3);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.caitem .catag{display:inline-block;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:0 6px;font-weight:700;color:var(--text-2);margin-right:4px}
+.caitem .caed,.caitem .cadl{flex:0 0 auto;width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--surface-2);font-size:15px}
+.caitem .cadl{color:var(--fail)}
 .pill{font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px;margin-left:auto;align-self:center;display:inline-flex;gap:5px;align-items:center}
 .pill.pass{color:var(--pass);background:var(--pass-bg);border:1px solid var(--pass-line)}
 .pill.warn{color:var(--warn);background:var(--warn-bg);border:1px solid var(--warn-line)}
@@ -310,6 +319,7 @@ input,select{font-family:var(--ff)}
         <div class="srow" onclick="openLangPicker()"><div class="sic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.6 2.5 15.4 0 18M12 3c-2.5 2.6-2.5 15.4 0 18"/></svg></div><span class="sname">ภาษา</span><span class="sval" id="langVal">ไทย</span><span class="chev">›</span></div>
         <div class="srow" onclick="openThemePicker()"><div class="sic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3a9 9 0 1 0 9 9c0-1.1-.9-2-2-2h-2a2 2 0 0 1-2-2V6c0-1.7-1.3-3-3-3z"/><circle cx="8" cy="10" r="1.1" fill="currentColor"/><circle cx="12" cy="7.5" r="1.1" fill="currentColor"/><circle cx="16" cy="15" r="1.1" fill="currentColor"/></svg></div><span class="sname">ธีมสี</span><span class="sval" id="themeVal">น้ำตาล (Brown)</span><span class="chev">›</span></div>
         <div class="srow" onclick="openChangePin()"><div class="sic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/><circle cx="12" cy="16" r="1.2" fill="currentColor"/></svg></div><span class="sname">เปลี่ยน PIN</span><span class="chev">›</span></div>
+        <div class="srow" onclick="openCustAdmin()"><div class="sic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg></div><span class="sname">จัดการสเปกลูกค้า</span><span class="chev">›</span></div>
         <div class="srow"><div class="sic"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M4 10h16M9 15h6"/></svg></div><span class="sname">การจัดเก็บข้อมูล</span><span class="sval">ออนไลน์ (Cloud)</span><span class="chev">›</span></div>
       </div>
 
@@ -382,7 +392,8 @@ var API_URL="https://script.google.com/macros/s/AKfycbzNTvJoZIh1CSnN54d0TJb5a29j
       saveStock:function(pin,lot,loc,ton,bags){jsonp({api:"saveStock",pin:pin,lot:lot,location:loc,qtyTon:ton,bags:bags},ok,err);},
       changePin:function(oldPin,newPin){jsonp({api:"changePin",oldPin:oldPin,newPin:newPin},ok,err);},
       importUpsert:function(pin,rows){jsonp({api:"importUpsert",pin:pin,rows:JSON.stringify(rows)},ok,err);},
-      getCustomers:function(){jsonp({api:"getCustomers"},ok,err);}
+      getCustomers:function(){jsonp({api:"getCustomers"},ok,err);},
+      saveCustomers:function(pin,rows){jsonp({api:"saveCustomers",pin:pin,rows:JSON.stringify(rows)},ok,err);}
     };return api;
   }
   window.google={script:{run:{
@@ -670,6 +681,92 @@ function custDetailHTML(r){
   if(!list.length) return '<div class="custbox"><div class="custhead none">ยังไม่ผ่านสเปกลูกค้ารายใด (เกรด '+esc(r.grade||'-')+')</div></div>';
   var items=list.map(function(c){return '<div class="custitem"><span class="cok">✓</span><span class="cn">'+esc(c.n)+'<small> · '+esc(c.t)+'</small></span></div>';}).join('');
   return '<div class="custbox"><div class="custhead">🏷 ลูกค้าที่รับล็อตนี้ได้ ('+list.length+' ราย)</div>'+items+'</div>';
+}
+
+/* ---------- จัดการสเปกลูกค้าในแอป (สร้าง/แก้ไข/ลบ → เขียนกลับชีต Spec) ---------- */
+var CUST_TYPES=['DCR','VHP','Organic','white','Golden Granulated'];
+function _fmtColor(c){ if(c.cmin!=null&&c.cmax!=null)return c.cmin+'-'+c.cmax+' ICU'; if(c.cmin!=null)return c.cmin+' ICU Min'; if(c.cmax!=null)return c.cmax+' ICU Max'; return '-'; }
+function _fmtMA(c){ if(c.mamin!=null||c.mamax!=null)return (c.mamin!=null?c.mamin:'')+' - '+(c.mamax!=null?c.mamax:'')+' mm'; return '-'; }
+function custToRow(c,code){
+  var typeStr=/sugar/i.test(c.t)?c.t:(c.t+' Sugar');
+  var cust1=c.n+typeStr;
+  return [code, c.n, cust1, '-', _fmtColor(c),
+    (c.pmin!=null?c.pmin+' % Min':'-'), (c.momax!=null?c.momax+' % Max':'-'),
+    (c.ivmax!=null?c.ivmax+' % Max':'-'), _fmtMA(c), '-',
+    (c.sdmax!=null?c.sdmax+' ppm Max':'-'), typeStr, cust1];
+}
+function custAllRows(){ return CUSTOMERS.map(function(c,i){return custToRow(c,i+1);}); }
+function saveAllCustomers(after){
+  if(!SESSION||SESSION.role!=='qc'){toast('ต้องเข้าสู่ระบบ QC ก่อน',true);return;}
+  google.script.run.withSuccessHandler(function(r){
+    if(r&&r.ok){ try{localStorage.setItem('ifind_cust',JSON.stringify(CUSTOMERS));}catch(e){} if($('results'))render(); if(after)after(); }
+    else toast((r&&r.error)||'บันทึกไม่สำเร็จ',true);
+  }).withFailureHandler(function(e){toast('บันทึกไม่สำเร็จ: '+(e&&e.message||e),true);}).saveCustomers(SESSION.pin, custAllRows());
+}
+function _cspec(c){var p=[]; if(c.cmin!=null&&c.cmax!=null)p.push('สี '+c.cmin+'-'+c.cmax); else if(c.cmin!=null)p.push('สี ≥'+c.cmin); else if(c.cmax!=null)p.push('สี ≤'+c.cmax); if(c.pmin!=null)p.push('Pol≥'+c.pmin); if(c.mamin!=null||c.mamax!=null)p.push('MA '+(c.mamin!=null?c.mamin:'')+'-'+(c.mamax!=null?c.mamax:'')); return p.join(' · ');}
+function openCustAdmin(){
+  if(!SESSION||SESSION.role!=='qc'){toast('ต้องเข้าสู่ระบบ QC ก่อนจัดการสเปกลูกค้า',true);return;}
+  var items=CUSTOMERS.map(function(c,i){
+    return '<div class="caitem"><div class="cainfo"><b>'+esc(c.n)+'</b><small><span class="catag">'+esc(c.t)+'</span> '+esc(_cspec(c))+'</small></div>'+
+      '<button class="caed" onclick="custEdit('+i+')" aria-label="แก้ไข">✎</button>'+
+      '<button class="cadl" onclick="custDel('+i+')" aria-label="ลบ">🗑</button></div>';
+  }).join('');
+  $('panel').innerHTML='<div class="grab"></div><button class="sheetx" onclick="closeSheet()">✕</button>'+
+    '<div class="cahead"><div><div style="font-size:17px;font-weight:700">จัดการสเปกลูกค้า</div><small style="color:var(--text-3);font-size:12px">ทั้งหมด '+CUSTOMERS.length+' ราย · บันทึกลง Google Sheet</small></div>'+
+    '<button class="btn primary" style="padding:9px 14px;font-size:13px" onclick="custEdit(-1)">＋ เพิ่ม</button></div>'+
+    '<div class="calist">'+(items||'<div class="empty">ยังไม่มีลูกค้า</div>')+'</div>';
+  openSheet();
+}
+function custEdit(i){
+  var c=i>=0?CUSTOMERS[i]:{n:'',t:'DCR'};
+  var mode=(c.cmin!=null&&c.cmax!=null)?'range':(c.cmin!=null?'min':'max');
+  var types=CUST_TYPES.slice(); if(c.t&&types.indexOf(c.t)<0)types.unshift(c.t);
+  var topt=types.map(function(t){return '<option value="'+esc(t)+'"'+(c.t===t?' selected':'')+'>'+esc(t)+'</option>';}).join('');
+  var c1=(mode==='min')?(c.cmin!=null?c.cmin:''):(c.cmax!=null?c.cmax:(c.cmin!=null?c.cmin:''));
+  var c2=(mode==='range'&&c.cmax!=null)?c.cmax:'';
+  $('panel').innerHTML='<div class="grab"></div><button class="sheetx" onclick="openCustAdmin()">‹</button>'+
+    '<div style="font-size:17px;font-weight:700;padding:6px 0 12px">'+(i>=0?'แก้ไขลูกค้า':'เพิ่มลูกค้า')+'</div>'+
+    '<div class="pinform" style="display:flex;flex-direction:column;gap:11px;padding-bottom:14px">'+
+    '<div><label>ชื่อลูกค้า</label><input id="ca_n" class="ff" value="'+esc(c.n)+'" placeholder="ชื่อบริษัทลูกค้า"></div>'+
+    '<div><label>ชนิดน้ำตาล</label><select id="ca_t" class="ff">'+topt+'</select></div>'+
+    '<div><label>สี ICU</label><div style="display:flex;gap:8px">'+
+      '<select id="ca_cm" class="ff" style="flex:0 0 38%" onchange="caCM()">'+
+        '<option value="max"'+(mode==='max'?' selected':'')+'>ไม่เกิน</option>'+
+        '<option value="min"'+(mode==='min'?' selected':'')+'>ไม่ต่ำกว่า</option>'+
+        '<option value="range"'+(mode==='range'?' selected':'')+'>ช่วง</option></select>'+
+      '<input id="ca_c1" class="ff" inputmode="numeric" placeholder="เช่น 500" value="'+esc(c1)+'">'+
+      '<input id="ca_c2" class="ff" inputmode="numeric" placeholder="ถึง" style="display:'+(mode==='range'?'block':'none')+'" value="'+esc(c2)+'"></div></div>'+
+    '<div><label>Pol ต่ำสุด (%)</label><input id="ca_p" class="ff" inputmode="decimal" placeholder="เช่น 99.00" value="'+esc(c.pmin!=null?c.pmin:'')+'"></div>'+
+    '<div><label>ความชื้นสูงสุด (%)</label><input id="ca_m" class="ff" inputmode="decimal" placeholder="เช่น 0.20" value="'+esc(c.momax!=null?c.momax:'')+'"></div>'+
+    '<div><label>Invert สูงสุด (%) <span style="color:var(--text-3);font-weight:400">— เว้นว่าง = ไม่กำหนด</span></label><input id="ca_iv" class="ff" inputmode="decimal" placeholder="เช่น 0.80" value="'+esc(c.ivmax!=null?c.ivmax:'')+'"></div>'+
+    '<div><label>M.A. (mm) ต่ำสุด – สูงสุด</label><div style="display:flex;gap:8px"><input id="ca_ma1" class="ff" inputmode="decimal" placeholder="ต่ำสุด 0.75" value="'+esc(c.mamin!=null?c.mamin:'')+'"><input id="ca_ma2" class="ff" inputmode="decimal" placeholder="สูงสุด 1.2" value="'+esc(c.mamax!=null?c.mamax:'')+'"></div></div>'+
+    '<div><label>Sediment สูงสุด <span style="color:var(--text-3);font-weight:400">— เว้นว่าง = ไม่กำหนด</span></label><input id="ca_sd" class="ff" inputmode="numeric" placeholder="เช่น 500" value="'+esc(c.sdmax!=null?c.sdmax:'')+'"></div>'+
+    '<div id="ca_err" style="color:var(--fail);font-size:13px;min-height:16px;font-weight:600"></div>'+
+    '<button class="btn primary block" onclick="custSubmit('+i+')">บันทึก</button></div>';
+  openSheet();
+}
+function caCM(){var m=$('ca_cm').value;$('ca_c2').style.display=m==='range'?'block':'none';}
+function _cn(id){var v=String($(id).value||'').trim();if(v==='')return null;var x=parseFloat(v);return isNaN(x)?null:x;}
+function custSubmit(i){
+  var n=$('ca_n').value.trim(); if(!n){$('ca_err').textContent='กรุณากรอกชื่อลูกค้า';return;}
+  var c={n:n,t:$('ca_t').value}, mode=$('ca_cm').value, c1=_cn('ca_c1'), c2=_cn('ca_c2');
+  if(mode==='max'){if(c1!=null)c.cmax=c1;}else if(mode==='min'){if(c1!=null)c.cmin=c1;}else{if(c1!=null)c.cmin=c1;if(c2!=null)c.cmax=c2;}
+  var p=_cn('ca_p'); if(p!=null)c.pmin=p;
+  var m=_cn('ca_m'); if(m!=null)c.momax=m;
+  var iv=_cn('ca_iv'); if(iv!=null)c.ivmax=iv;
+  var a1=_cn('ca_ma1'); if(a1!=null)c.mamin=a1;
+  var a2=_cn('ca_ma2'); if(a2!=null)c.mamax=a2;
+  var sd=_cn('ca_sd'); if(sd!=null)c.sdmax=sd;
+  var prev=CUSTOMERS.slice();
+  if(i>=0)CUSTOMERS[i]=c; else CUSTOMERS.push(c);
+  $('ca_err').textContent='กำลังบันทึก…';
+  saveAllCustomers(function(){toast('✓ บันทึกสเปกลูกค้าแล้ว');openCustAdmin();});
+}
+function custDel(i){
+  var c=CUSTOMERS[i]; if(!c)return;
+  if(!confirm('ลบลูกค้า “'+c.n+'” ออกจากสเปก?'))return;
+  CUSTOMERS.splice(i,1);
+  saveAllCustomers(function(){toast('ลบแล้ว');openCustAdmin();});
 }
 
 function warehouseRows(){
