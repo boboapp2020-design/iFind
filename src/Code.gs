@@ -193,7 +193,7 @@ function custRowFromObj(c, code){
     (ivmax!=null?ivmax+' % Max':'-'), ma, '-',
     (sdmax!=null?sdmax+' ppm Max':'-'), typeStr, cust1];
 }
-var SPEC_VER = '2026-08-24-saveCust-v2';   // ใช้ตรวจว่า deploy เวอร์ชันล่าสุดหรือยัง (getVersion)
+var SPEC_VER = '2026-08-24-dateLock-v3';   // ใช้ตรวจว่า deploy เวอร์ชันล่าสุดหรือยัง (getVersion)
 function getVersion(){ return {ok:true, version: SPEC_VER}; }
 function saveCustomers(pin, custs){
   requireRole(pin, 'qc');
@@ -241,8 +241,8 @@ function saveQC(pin, rec){
   var now = new Date();
   var write = function(rng){
     rng.getCell(1,COL.grade).setValue(rec.grade||'');
-    rng.getCell(1,COL.prod).setValue(rec.prod||'');
-    rng.getCell(1,COL.bbf).setValue(rec.bbf||'');
+    rng.getCell(1,COL.prod).setValue(toDate(rec.prod||''));
+    rng.getCell(1,COL.bbf).setValue(toDate(rec.bbf||''));
     rng.getCell(1,COL.color).setValue(numOrBlank(rec.color));
     rng.getCell(1,COL.pol).setValue(numOrBlank(rec.pol));
     rng.getCell(1,COL.moist).setValue(numOrBlank(rec.moist));
@@ -305,7 +305,7 @@ function importUpsert(pin, rows){
   var sp = spec(), now = new Date(), updated = 0, appended = [];
   function writeQuality(rng, rec, status){
     rng.getCell(1,COL.grade).setValue(rec.grade||'');
-    if (rec.prod) rng.getCell(1,COL.prod).setValue(rec.prod);
+    if (rec.prod) rng.getCell(1,COL.prod).setValue(toDate(rec.prod));
     rng.getCell(1,COL.color).setValue(numOrBlank(rec.color));
     rng.getCell(1,COL.pol).setValue(numOrBlank(rec.pol));
     rng.getCell(1,COL.moist).setValue(numOrBlank(rec.moist));
@@ -314,9 +314,9 @@ function importUpsert(pin, rows){
     rng.getCell(1,COL.ash).setValue(numOrBlank(rec.ash));
     rng.getCell(1,COL.sediment).setValue(numOrBlank(rec.sediment));
     rng.getCell(1,COL.status).setValue(status);
-    if (rec.recheck) rng.getCell(1,COL.recheck).setValue(rec.recheck);
+    if (rec.recheck) rng.getCell(1,COL.recheck).setValue(toDate(rec.recheck));
     rng.getCell(1,COL.updatedBy).setValue(rec.analyst ? String(rec.analyst) : u.label);
-    rng.getCell(1,COL.updatedAt).setValue(rec.updatedAt || now);
+    rng.getCell(1,COL.updatedAt).setValue(rec.updatedAt ? toDate(rec.updatedAt) : now);
   }
   rows.forEach(function(rec){
     var lot = String(rec.lot||'').trim(); if(!lot) return;
@@ -327,14 +327,14 @@ function importUpsert(pin, rows){
     } else {
       var row = []; for (var k=0;k<DATA_COLS;k++) row[k]='';
       row[COL.lot-1]=lot;               row[COL.grade-1]=rec.grade||'';
-      row[COL.prod-1]=rec.prod||'';     row[COL.color-1]=numOrBlank(rec.color);
+      row[COL.prod-1]=toDate(rec.prod||''); row[COL.color-1]=numOrBlank(rec.color);
       row[COL.pol-1]=numOrBlank(rec.pol);       row[COL.moist-1]=numOrBlank(rec.moist);
       row[COL.invert-1]=numOrBlank(rec.invert); row[COL.ma-1]=numOrBlank(rec.ma);
       row[COL.ash-1]=numOrBlank(rec.ash);       row[COL.sediment-1]=numOrBlank(rec.sediment);
       row[COL.status-1]=status;         row[COL.source-1]='อัปโหลด';
-      row[COL.recheck-1]=rec.recheck||'';
+      row[COL.recheck-1]=toDate(rec.recheck||'');
       row[COL.updatedBy-1]=rec.analyst?String(rec.analyst):u.label;
-      row[COL.updatedAt-1]=rec.updatedAt || now;
+      row[COL.updatedAt-1]=rec.updatedAt ? toDate(rec.updatedAt) : now;
       appended.push(row);
     }
   });
@@ -370,6 +370,17 @@ function numOrBlank(v){ if(v===''||v===null||v===undefined) return ''; var n=par
 function dstr(v){
   if (v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), 'dd/MM/yyyy');
   return str(v);
+}
+/* แปลง "dd/MM/yyyy" หรือ "dd/MM/yyyy HH:mm" → Date object (กัน Google Sheets ตีความสลับวัน/เดือน)
+   เขียน Date object ลงชีตแทนข้อความ แล้ว dstr อ่านกลับเป็น dd/MM/yyyy เสมอ ทุกเครื่อง */
+function toDate(s){
+  if (s instanceof Date) return s;
+  s = String(s||'').trim(); if (!s) return '';
+  var m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{2}))?/);
+  if (!m) return s;
+  var d=+m[1], mo=+m[2], y=+m[3], h=m[4]?+m[4]:0, mi=m[5]?+m[5]:0;
+  if (d<1||d>31||mo<1||mo>12) return s;
+  return new Date(y, mo-1, d, h, mi);
 }
 function findRowByLot(sh, lot){
   if (sh.getLastRow() < 2) return -1;
