@@ -108,6 +108,50 @@ input,select{font-family:var(--ff)}
 .hrow .st{flex:0 0 auto;font-size:11px;font-weight:700;padding:5px 9px;border-radius:999px;white-space:nowrap}
 .hrow .st.ok{background:#E6F4EA;color:#23824A} .hrow .st.wait{background:#FDEEDC;color:#C9661A}
 .hrow .chev{color:#b5a68f;font-size:18px;flex:0 0 auto}
+.hrow:active{background:#FBF6EC}
+
+/* ===== HOME ANIMATION (ขยับ + แสงแวววาว) — ปิดอัตโนมัติถ้าเครื่องตั้ง "ลดการเคลื่อนไหว" ===== */
+@keyframes hUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
+@keyframes hFade{from{opacity:0}to{opacity:1}}
+@keyframes hFloat{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-5px) rotate(-1.4deg)}}
+@keyframes hSheen{0%,55%{background-position:160% 0}100%{background-position:-60% 0}}
+@keyframes hTwinkle{0%,100%{opacity:0;transform:scale(.3) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(35deg)}}
+@keyframes hGlow{0%,100%{box-shadow:0 4px 12px rgba(232,118,28,.4),0 0 0 0 rgba(240,138,36,.5)}60%{box-shadow:0 4px 12px rgba(232,118,28,.4),0 0 0 10px rgba(240,138,36,0)}}
+@keyframes hRing{0%{transform:scale(.85);opacity:.95}100%{transform:scale(1.55);opacity:0}}
+@keyframes hNudge{0%,100%{transform:translateX(0)}50%{transform:translateX(3px)}}
+@keyframes hPop{0%{opacity:0;transform:scale(.3)}70%{transform:scale(1.18)}100%{opacity:1;transform:scale(1)}}
+@keyframes hBeat{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+.heroimg{animation:hFade .9s ease-out backwards}
+.hero::after{content:'';position:absolute;inset:0;pointer-events:none;z-index:4;
+  background:linear-gradient(105deg,transparent 38%,rgba(255,255,255,.55) 50%,transparent 62%);background-size:260% 100%;background-position:160% 0;
+  animation:hSheen 6s ease-in-out 1.2s infinite}
+.hhit.find::after{content:'';position:absolute;inset:0;border-radius:50%;border:2px solid rgba(240,138,36,.8);pointer-events:none;animation:hRing 2.2s ease-out infinite}
+.hhit.bell::before{content:'';position:absolute;left:60%;top:17%;width:24%;height:24%;border-radius:50%;border:2px solid #F08A24;pointer-events:none;animation:hRing 2s ease-out .4s infinite}
+.homesearch{animation:hUp .6s cubic-bezier(.2,.8,.2,1) .05s backwards}
+.homesearch button{animation:hGlow 2.4s ease-in-out infinite}
+.hcard.qc{animation:hUp .65s cubic-bezier(.2,.8,.2,1) .18s backwards}
+.hcard.wh{animation:hUp .65s cubic-bezier(.2,.8,.2,1) .3s backwards}
+.hcard::after{content:'';position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(115deg,transparent 40%,rgba(255,255,255,.6) 50%,transparent 60%);background-size:300% 100%;background-position:160% 0;
+  animation:hSheen 4.8s ease-in-out 1s infinite}
+.hcard.wh::after{animation-delay:2.6s}
+.hcard::before{content:'✦';position:absolute;left:11%;top:26%;z-index:2;font-size:15px;color:#fff;pointer-events:none;opacity:0;
+  text-shadow:0 0 8px rgba(255,255,255,.95),0 0 16px rgba(255,200,120,.8);animation:hTwinkle 3.2s ease-in-out 1.2s infinite}
+.hcard.wh::before{left:auto;right:9%;top:34%;color:#fff;text-shadow:0 0 8px #fff,0 0 16px rgba(120,170,240,.9);animation-delay:2.4s}
+.hc-ico::after{content:'✦';position:absolute;top:-7px;left:-7px;font-size:12px;color:#fff;opacity:0;pointer-events:none;
+  text-shadow:0 0 7px #fff,0 0 12px rgba(255,190,100,.9);animation:hTwinkle 2.8s ease-in-out .6s infinite}
+.hcard.wh .hc-ico::after{text-shadow:0 0 7px #fff,0 0 12px rgba(110,160,235,.9);animation-delay:1.8s}
+.hc-art{animation:hFloat 3.6s ease-in-out infinite}
+.hcard.wh .hc-art{animation-delay:-1.6s}
+.hc-btn i svg{animation:hNudge 1.5s ease-in-out infinite}
+.hpanel{animation:hUp .6s cubic-bezier(.2,.8,.2,1) .42s backwards}
+.hpanel:last-child{animation-delay:.55s}
+.hp-ic svg{animation:hBeat 1.8s ease-in-out infinite}
+.hstat .si{animation:hPop .55s cubic-bezier(.3,1.5,.5,1) backwards}
+.hstat.s1 .si{animation-delay:.55s} .hstat.s2 .si{animation-delay:.65s} .hstat.s3 .si{animation-delay:.75s} .hstat.s4 .si{animation-delay:.85s}
+@media(prefers-reduced-motion:reduce){
+  #home *,#home *::before,#home *::after{animation:none!important;transition:none!important}
+}
 
 /* ===== HAMBURGER MENU ===== */
 .hamb{position:fixed;top:22px;left:calc(50% - 230px + 22px);width:46px;height:46px;border-radius:50%;z-index:40;
@@ -584,14 +628,27 @@ var HSI={doc:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
   box:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M21 8 12 3 3 8v8l9 5 9-5z"/><path d="m3 8 9 5 9-5M12 13v8"/></svg>',
   ok:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m5 12.5 4.5 4.5L19 7.5"/></svg>',
   clock:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>'};
-function hstat(c,ic,label,val,unit){return '<div class="hstat '+c+'"><span class="si">'+ic+'</span><small>'+label+'</small><b>'+val+'</b><em>'+unit+'</em></div>';}
+function hstat(c,ic,label,n,unit,has){return '<div class="hstat '+c+'"><span class="si">'+ic+'</span><small>'+label+'</small><b'+(has?' data-v="'+n+'"':'')+'>'+(has?'0':'–')+'</b><em>'+unit+'</em></div>';}
+/* ตัวเลขนับขึ้นจาก 0 → ค่าจริง (ข้ามถ้าเครื่องตั้ง "ลดการเคลื่อนไหว") */
+function countUp(root){
+  var still=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
+  [].forEach.call(root.querySelectorAll('b[data-v]'),function(b){
+    var to=+b.getAttribute('data-v'),t0=null;
+    if(still){b.textContent=to.toLocaleString('en-US');return;}
+    (function step(ts){if(t0===null)t0=ts;var p=Math.min(1,(ts-t0)/900),e=1-Math.pow(1-p,3);
+      b.textContent=Math.round(to*e).toLocaleString('en-US');if(p<1)requestAnimationFrame(step);})(performance.now());
+  });
+}
+var HSTAT_KEY='';
 function renderHomeStats(){
   var el=$('hStats');if(!el)return;
   var tot=RECORDS.length,stock=0,done=0;
   RECORDS.forEach(function(r){if(hasStock(r))stock++;if(isComplete(r))done++;});
-  var f=function(n){return tot?n.toLocaleString('en-US'):'–';};
-  el.innerHTML=hstat('s1',HSI.doc,'รวมรายการ',f(tot),'รายการ')+hstat('s2',HSI.box,'จำนวนสินค้า',f(stock),'Lot')+
-    hstat('s3',HSI.ok,'ตรวจวัดแล้ว',f(done),'รายการ')+hstat('s4',HSI.clock,'รอการตรวจวัด',f(tot-done),'รายการ');
+  var key=tot+'|'+stock+'|'+done; if(key===HSTAT_KEY&&el.children.length)return;   // ค่าเดิม ไม่ต้องวาดซ้ำ
+  HSTAT_KEY=key; var h=tot>0;
+  el.innerHTML=hstat('s1',HSI.doc,'รวมรายการ',tot,'รายการ',h)+hstat('s2',HSI.box,'จำนวนสินค้า',stock,'Lot',h)+
+    hstat('s3',HSI.ok,'ตรวจวัดแล้ว',done,'รายการ',h)+hstat('s4',HSI.clock,'รอการตรวจวัด',tot-done,'รายการ',h);
+  if(h)countUp(el);
 }
 function homeRowHTML(r){var ok=isComplete(r);
   return '<div class="hrow" onclick="openDetail(\''+encodeURIComponent(r.lot)+'\')"><div class="th">'+swatchHTML(r)+'</div>'+
