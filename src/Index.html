@@ -245,6 +245,52 @@ input,select{font-family:var(--ff)}
 .searchhint svg{width:44px;height:44px;color:var(--border-strong);opacity:.7}
 .searchhint .t{font-size:15px;color:var(--text-2);font-weight:600;line-height:1.6}
 .searchhint small{font-size:12.5px;color:var(--text-3)}
+
+/* ===== แถบหัวหน้าค้นหา/บันทึก (ดีไซน์ใหม่) ===== */
+.appbar{gap:12px;padding:12px 16px}
+.back{width:44px;height:44px;border-radius:50%;background:#F6F0E4;color:#3a2f22}
+.back svg{width:21px;height:21px}
+.avatar{width:46px;height:46px;border-radius:14px;color:#fff;flex:0 0 auto}
+.avatar svg{width:25px;height:25px}
+.avatar.wh{background:linear-gradient(150deg,#1E63C9,#0F49A8);box-shadow:0 6px 14px rgba(30,80,180,.28)}
+.avatar.qc{box-shadow:0 6px 14px rgba(46,125,86,.28)}
+.who{min-width:0} .who b{font-size:19px;font-weight:800;line-height:1.2;color:#1f1912} .who small{font-size:13px}
+.badge{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;padding:8px 13px;white-space:nowrap;flex:0 0 auto}
+.badge svg{width:16px;height:16px;flex:0 0 auto}
+.badge.view{color:#1E4E8C;background:#E8F0FB} .badge.view svg{color:#F08A24}
+.badge.edit svg{color:currentColor}
+
+/* ===== หน้าค้นหาสินค้า (ดีไซน์ใหม่) ===== */
+.whv .wsearch{display:flex;align-items:center;gap:10px;background:#fff;border:1.5px solid #ECE3D3;border-radius:999px;
+  padding:6px 6px 6px 18px;margin-bottom:14px;box-shadow:0 6px 16px rgba(80,55,20,.07)}
+.whv .wsearch>svg{width:22px;height:22px;color:#6b5d47;flex:0 0 auto}
+.whv .wsearch input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-size:16px;color:#2a2016;padding:10px 0;font-family:var(--ff)}
+.whv .wsearch input::placeholder{color:#9a8d78}
+.whv .wsearch button{flex:0 0 auto;width:48px;height:48px;border-radius:50%;border:0;display:grid;place-items:center;color:#fff;cursor:pointer;
+  background:linear-gradient(150deg,#F7A13A,#E8761C);box-shadow:0 4px 12px rgba(232,118,28,.4)}
+.whv .wsearch button svg{width:22px;height:22px}
+.whv .chips{gap:9px;margin-bottom:16px;flex-wrap:nowrap;overflow-x:auto;scrollbar-width:none;padding:2px 2px 6px}
+.whv .chips::-webkit-scrollbar{display:none}
+.whv .chip{flex:0 0 auto;font-size:14px;font-weight:700;color:#2a2016;background:#fff;border:1.5px solid #E5DCCB;padding:9px 20px;cursor:pointer;transition:.15s}
+.whv .chip[aria-pressed="true"]{background:linear-gradient(150deg,#1E63C9,#0F49A8);border-color:#0F49A8;color:#fff;padding:9px 24px;box-shadow:0 6px 14px rgba(30,80,180,.28)}
+.whv .wadv{background:#FDFBF7;border:1px solid #F0E8DA;border-radius:18px;padding:16px;margin-bottom:6px;box-shadow:0 4px 14px rgba(80,55,20,.05)}
+.whv .wadv .atitle{display:flex;align-items:center;gap:10px;font-size:15px;font-weight:800;color:#2a2016;letter-spacing:0;text-transform:none;margin-bottom:12px}
+.whv .wadv .atitle svg{width:22px;height:22px;color:#F08A24;flex:0 0 auto}
+.whv .arow{gap:12px 14px}
+.whv .field label{display:flex;align-items:center;gap:7px;font-size:12.5px;font-weight:600;color:#4a3f30;margin-bottom:6px}
+.whv .field label svg{width:16px;height:16px;color:#F08A24;flex:0 0 auto}
+.whv .field input{border:1.5px solid #E7DECE;background:#fff;border-radius:12px;padding:12px 14px;font-size:15px;font-family:var(--ff)}
+.whv .field input:focus{outline:2px solid #1E63C9;outline-offset:0;border-color:transparent}
+.whv .searchhint{padding:22px 16px 30px;gap:6px}
+.whv .searchhint .wh-illu{width:min(250px,72%);height:auto;color:inherit;opacity:1}
+.whv .searchhint .t{font-size:17px;font-weight:800;color:#2a2016;line-height:1.55;margin-top:6px}
+.whv .searchhint small{font-size:14px;color:#7a6c58}
+.whv .searchhint small b{color:#E8761C;font-weight:800;font-size:16px}
+@keyframes wScan{0%,100%{transform:translate(0,0) rotate(0)}50%{transform:translate(-14px,4px) rotate(-6deg)}}
+@keyframes wBlink{0%,100%{opacity:.2}50%{opacity:1}}
+.wh-illu .mg{transform-box:fill-box;transform-origin:center;animation:wScan 3.2s ease-in-out infinite}
+.wh-illu .sp{animation:wBlink 1.6s ease-in-out infinite}
+@media(prefers-reduced-motion:reduce){.whv *{animation:none!important}}
 .loading{text-align:center;color:var(--text-3);padding:40px}
 
 .fab{position:fixed;bottom:22px;right:calc(50% - 230px + 22px);height:52px;padding:0 20px;border-radius:15px;
@@ -668,9 +714,15 @@ function startRole(role){
   if(!history.state||!history.state.s) history.pushState({s:'role'},'');
   else history.replaceState({s:'role'},'');
   go('role',true);
-  $('avatar').className='avatar '+(role==='qc'?'qc':'wh');$('avatar').textContent=role==='qc'?'QC':'คส';
+  $('avatar').className='avatar '+(role==='qc'?'qc':'wh');
+  $('avatar').innerHTML=role==='qc'
+    ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="m8.5 12.5 2.2 2.2 4.3-4.4"/></svg>'
+    :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 10.5 12 4l9 6.5V20H3z"/><path d="M7 20v-7.5h10V20M7 16.3h10"/></svg>';
   $('whoName').textContent=role==='qc'?'บันทึกค่าคุณภาพ':'ค้นหาสินค้า';$('whoDesc').textContent=SESSION.label;
-  $('roleBadge').className='badge '+(role==='qc'?'edit':'view');$('roleBadge').textContent=role==='qc'?'แก้ไขได้':'อ่าน + สต๊อก';
+  $('roleBadge').className='badge '+(role==='qc'?'edit':'view');
+  $('roleBadge').innerHTML=role==='qc'
+    ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="m13.5 6.5 4 4"/></svg>แก้ไขได้'
+    :'<svg viewBox="0 0 24 24" fill="currentColor"><rect x="4" y="13" width="3.6" height="7" rx="1"/><rect x="10.2" y="9" width="3.6" height="11" rx="1"/><rect x="16.4" y="5" width="3.6" height="15" rx="1"/></svg>อ่าน + สต๊อก';
   $('fab').style.display=role==='qc'?'flex':'none';
   filters={q:HOME_Q||'',grade:'all',colorMin:'',colorMax:'',maMin:'',maMax:''};HOME_Q=null;currentRoleView=role;shellView=null;loadData();
 }
@@ -912,10 +964,9 @@ function warehouseList(){
   var el=$('results');if(!el)return;
   // ยังไม่ค้นหา → แสดงคำแนะนำ (หน้าเปิดไวขึ้น ไม่ต้องวาดการ์ดทั้งหมด)
   if(!whHasFilter()){
-    el.innerHTML='<div class="searchhint">'+
-      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>'+
+    el.innerHTML='<div class="searchhint">'+WH_ILLU+
       '<div class="t">พิมพ์เลข Strike หรือเลือกตัวกรอง<br>เพื่อค้นหาน้ำตาล</div>'+
-      '<small>มีข้อมูลทั้งหมด '+RECORDS.length+' รายการ</small>'+
+      '<small>มีข้อมูลทั้งหมด <b>'+RECORDS.length+'</b> รายการ</small>'+
     '</div>';
     return;
   }
@@ -924,18 +975,33 @@ function warehouseList(){
     (total?shown.map(cardHTML).join('')+(total>LIST_CAP?'<div class="more">แสดง '+LIST_CAP+' รายการแรก · พิมพ์เลข Strike เพื่อค้นหาให้แคบลง</div>':'')
           :'<div class="empty">ไม่พบน้ำตาลที่ตรงเงื่อนไข</div>');
 }
+/* ไอคอน + ภาพประกอบหน้าค้นหาสินค้า */
+var WI={mag:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>',
+  funnel:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 4h18l-7 8.5V19l-4 2v-8.5z"/></svg>',
+  palette:'<svg viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M12 3a9 9 0 0 0 0 18c1.1 0 1.8-.8 1.8-1.7 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-.9.8-1.7 1.7-1.7H16a5 5 0 0 0 5-5c0-4-4-7.2-9-7.2zM6.5 12.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm3-4a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm5 0a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3zm3 4a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3z"/></svg>',
+  cube:'<svg viewBox="0 0 24 24"><path d="M12 2 3 7v10l9 5 9-5V7z" fill="currentColor"/><path d="m3.5 7.3 8.5 4.8 8.5-4.8M12 12v9.5" stroke="#fff" stroke-width="1.6" fill="none"/></svg>'};
+var WH_ILLU='<svg class="wh-illu" viewBox="0 0 240 150" aria-hidden="true">'+
+  '<ellipse cx="122" cy="78" rx="104" ry="60" fill="#EFEBE4"/><ellipse cx="58" cy="116" rx="26" ry="13" fill="#E8E3DB"/>'+
+  '<rect x="18" y="128" width="204" height="4" rx="2" fill="#E6E1D8"/><rect x="44" y="137" width="152" height="3" rx="1.5" fill="#EEEAE3"/>'+
+  '<rect x="56" y="116" width="100" height="6" rx="1.5" fill="#E7B675"/><rect x="60" y="122" width="11" height="6" fill="#D49D5A"/><rect x="100" y="122" width="11" height="6" fill="#D49D5A"/><rect x="141" y="122" width="11" height="6" fill="#D49D5A"/>'+
+  '<rect x="58" y="96" width="96" height="22" rx="11" fill="#EAC795"/><rect x="63" y="77" width="86" height="21" rx="10.5" fill="#EFD2A4"/><rect x="69" y="59" width="74" height="20" rx="10" fill="#F3DBB3"/>'+
+  '<path d="M70 107h72M75 88h62M80 69h52" stroke="#DDB47E" stroke-width="1.4" stroke-linecap="round" opacity=".7"/>'+
+  '<g class="mg"><circle cx="146" cy="72" r="25" fill="#fff" fill-opacity=".55" stroke="#1F3F73" stroke-width="7"/>'+
+  '<circle cx="138" cy="64" r="7" fill="#fff" fill-opacity=".85"/><path d="M164 90l20 21" stroke="#1F3F73" stroke-width="10" stroke-linecap="round"/></g>'+
+  '<path class="sp" d="M176 36l4-9M185 45l9-4M187 56l9 1" stroke="#F08A24" stroke-width="3.2" stroke-linecap="round"/></svg>';
 function renderWarehouse(){
-  $('body').innerHTML=
-    '<div class="searchbox"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>'+
-    '<input id="q" inputmode="numeric" pattern="[0-9]*" placeholder="ค้นหาเลข Lot (Strike)…" value="'+esc(filters.q)+'" oninput="filters.q=this.value;warehouseList()"></div>'+
+  $('body').innerHTML='<div class="whv">'+
+    '<div class="wsearch">'+WI.mag+
+    '<input id="q" inputmode="numeric" pattern="[0-9]*" placeholder="ค้นหาเลข Lot (Strike)…" value="'+esc(filters.q)+'" oninput="filters.q=this.value;warehouseList()">'+
+    '<button type="button" aria-label="ค้นหา" onclick="$(\'q\').blur();warehouseList()">'+WI.mag+'</button></div>'+
     '<div class="chips">'+whChips()+'</div>'+
-    '<div class="advanced"><div class="atitle">◆ ค้นหาค่าที่เหมาะสม (ระบุเป็นช่วง)</div><div class="arow">'+
-      '<div class="field"><label>สีต่ำสุด (ICU)</label><input inputmode="numeric" value="'+esc(filters.colorMin)+'" oninput="filters.colorMin=this.value;warehouseList()" placeholder="เช่น 300"></div>'+
-      '<div class="field"><label>สีสูงสุด (ICU)</label><input inputmode="numeric" value="'+esc(filters.colorMax)+'" oninput="filters.colorMax=this.value;warehouseList()" placeholder="เช่น 700"></div>'+
-      '<div class="field"><label>M.A. ต่ำสุด (mm)</label><input inputmode="decimal" value="'+esc(filters.maMin)+'" oninput="filters.maMin=this.value;warehouseList()" placeholder="เช่น 0.80"></div>'+
-      '<div class="field"><label>M.A. สูงสุด (mm)</label><input inputmode="decimal" value="'+esc(filters.maMax)+'" oninput="filters.maMax=this.value;warehouseList()" placeholder="เช่น 1.10"></div>'+
+    '<div class="advanced wadv"><div class="atitle">'+WI.funnel+'ค้นหาค่าที่เหมาะสม (ระบุเป็นช่วง)</div><div class="arow">'+
+      '<div class="field"><label>'+WI.palette+'สีต่ำสุด (ICU)</label><input inputmode="numeric" value="'+esc(filters.colorMin)+'" oninput="filters.colorMin=this.value;warehouseList()" placeholder="เช่น 300"></div>'+
+      '<div class="field"><label>'+WI.palette+'สีสูงสุด (ICU)</label><input inputmode="numeric" value="'+esc(filters.colorMax)+'" oninput="filters.colorMax=this.value;warehouseList()" placeholder="เช่น 700"></div>'+
+      '<div class="field"><label>'+WI.cube+'M.A. ต่ำสุด (mm)</label><input inputmode="decimal" value="'+esc(filters.maMin)+'" oninput="filters.maMin=this.value;warehouseList()" placeholder="เช่น 0.80"></div>'+
+      '<div class="field"><label>'+WI.cube+'M.A. สูงสุด (mm)</label><input inputmode="decimal" value="'+esc(filters.maMax)+'" oninput="filters.maMax=this.value;warehouseList()" placeholder="เช่น 1.10"></div>'+
     '</div></div>'+
-    '<div id="results"></div>';
+    '<div id="results"></div></div>';
   warehouseList();
 }
 function cardHTML(r){var st=statusOf(r);
