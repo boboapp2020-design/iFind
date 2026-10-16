@@ -522,9 +522,6 @@ html[data-dark] .fchip{background:var(--surface-2)}
 /* ===== ค้นตามลูกค้า ===== */
 .custpick{margin:0 0 12px}
 .custpick label{display:block;font-size:12.5px;font-weight:700;color:var(--text-2);margin:0 2px 6px}
-.custpick select{width:100%;appearance:none;-webkit-appearance:none;border:1.5px solid #E7DECE;background:#fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b5d47' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") no-repeat right 14px center/18px;
-  border-radius:14px;padding:13px 40px 13px 14px;font-size:15px;color:#2a2016;font-family:var(--ff);font-weight:600}
-.custpick select:focus{outline:2px solid #1E63C9;outline-offset:0;border-color:transparent}
 .custinfo{background:var(--blue-soft);border:1px solid var(--border);border-radius:16px;padding:12px 13px;margin:-2px 0 12px}
 .ci-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
 .ci-h b{font-size:14.5px;font-weight:800;color:var(--text)}
@@ -544,9 +541,32 @@ html[data-dark] .fchip{background:var(--surface-2)}
 .cc-go{margin-left:auto;color:var(--text-3);font-weight:700}
 .custitem.tap{cursor:pointer}
 .custitem.tap:active{background:var(--surface-2)}
-html[data-dark] .custpick select{background-color:var(--surface);border-color:var(--border);color:var(--text)}
 
 .ci-h .catag{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:0 7px;font-size:11px;font-weight:700;color:var(--text-2)}
+
+/* ===== แก้ล้นจอ: ชิปขึ้นบรรทัดใหม่ + ปุ่มเลือกลูกค้า + หน้าต่างเลือก ===== */
+.app{overflow-x:clip}
+.whv .chips{flex-wrap:wrap;overflow:visible;padding:2px 0 4px}
+.whv .chip{padding:8px 15px}
+.whv .chip[aria-pressed="true"]{padding:8px 18px}
+.custbtn{display:flex;align-items:center;gap:10px;width:100%;min-width:0;text-align:left;background:#fff;border:1.5px solid #E7DECE;border-radius:14px;padding:13px 14px;font-size:15px;font-weight:600;color:#2a2016;font-family:var(--ff);cursor:pointer}
+.custbtn .cb-t{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.custbtn .cb-t.ph{color:#8f826d;font-weight:500}
+.custbtn svg{width:18px;height:18px;flex:0 0 auto;color:#6b5d47}
+.custbtn.on{border-color:#1E63C9}
+.custinfo,.custpick{max-width:100%;min-width:0}
+.ci-h b{overflow-wrap:anywhere;min-width:0}
+.ci-x{margin-left:auto;flex:0 0 auto;font-size:12px;font-weight:700;color:var(--blue);background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:4px 12px;cursor:pointer;font-family:var(--ff)}
+.seg button{overflow-wrap:anywhere}
+.cpq{width:100%;border:1.5px solid var(--border-strong);border-radius:12px;padding:11px 13px;font-size:16px;background:var(--surface);color:var(--text);font-family:var(--ff);margin-bottom:10px}
+.cplist{max-height:58vh;overflow-y:auto;overscroll-behavior:contain;display:flex;flex-direction:column;gap:6px;padding-bottom:8px}
+.cpi{border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--surface);cursor:pointer}
+.cpi b{display:block;font-size:14px;font-weight:700;color:var(--text);overflow-wrap:anywhere;line-height:1.35}
+.cpi span{display:block;font-size:11.5px;color:var(--text-3);margin-top:3px;line-height:1.55;overflow-wrap:anywhere}
+.cpi .catag{font-style:normal;display:inline-block;background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:0 6px;margin-right:6px;font-weight:700;color:var(--text-2)}
+.cpi.on{border-color:#1E63C9;background:var(--blue-soft)}
+.cpi:active{background:var(--surface-2)}
+html[data-dark] .custbtn{background:var(--surface);border-color:var(--border);color:var(--text)}
 </style>
 </head>
 <body>
@@ -1941,19 +1961,38 @@ function custOrder(rows){
   return {c:c,label:CSORT_LBL[k]||CSORT_LBL.safe,inc:inc};
 }
 function custPickHTML(){
-  return '<div class="custpick"><label>ลูกค้า — แสดงเฉพาะ Lot ที่ผ่านสเปก</label><select id="custSel" onchange="setCust(this.value)"></select></div><div id="custInfo"></div>';
+  return '<div class="custpick"><label>ลูกค้า — แสดงเฉพาะ Lot ที่ผ่านสเปก</label><button type="button" class="custbtn" id="custSel" onclick="openCustPicker()"><span class="cb-t"></span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="m6 9 6 6 6-6"/></svg></button></div><div id="custInfo"></div>';
 }
 function fillCustSel(){
-  var s=$('custSel');if(!s)return;
-  s.innerHTML='<option value="">ทุกลูกค้า (ไม่กรอง)</option>'+CUSTOMERS.map(function(c,i){return '<option value="'+i+'"'+(filters.cust===i?' selected':'')+'>'+esc(c.n)+' · '+esc(c.t)+'</option>';}).join('');
+  var b=$('custSel');if(!b)return;
+  var c=filters.cust!=null?CUSTOMERS[filters.cust]:null,t=b.querySelector('.cb-t');
+  t.textContent=c?(c.n+' · '+c.t):'ทุกลูกค้า (ไม่กรอง) — แตะเพื่อเลือก';
+  t.classList.toggle('ph',!c);b.classList.toggle('on',!!c);
   renderCustInfo();
 }
+/* หน้าต่างเลือกลูกค้า (ชื่อยาวขึ้นบรรทัดใหม่ได้ + ค้นหาชื่อ) */
+function openCustPicker(){
+  $('panel').innerHTML='<div class="grab"></div><button class="sheetx" onclick="closeSheet()">✕</button>'+
+    '<div style="font-size:17px;font-weight:700;padding:8px 0 10px">เลือกลูกค้า</div>'+
+    '<input id="cpq" class="cpq" type="search" autocomplete="off" placeholder="ค้นหาชื่อลูกค้า…" oninput="custPickList(this.value)"><div class="cplist" id="cpl"></div>';
+  openSheet();custPickList('');
+}
+function custPickList(q){
+  q=String(q||'').toLowerCase().trim();
+  var h='<div class="cpi'+(filters.cust==null?' on':'')+'" onclick="pickCust(\'\')"><b>ทุกลูกค้า (ไม่กรอง)</b></div>';
+  CUSTOMERS.forEach(function(c,i){
+    if(q&&(c.n+' '+c.t).toLowerCase().indexOf(q)<0)return;
+    h+='<div class="cpi'+(filters.cust===i?' on':'')+'" onclick="pickCust('+i+')"><b>'+esc(c.n)+'</b><span><i class="catag">'+esc(c.t)+'</i>'+esc(specText(c))+'</span></div>';
+  });
+  $('cpl').innerHTML=h;
+}
+function pickCust(i){closeSheet();setCust(i);}
 function renderCustInfo(){
   var el=$('custInfo');if(!el)return;
   var c=filters.cust!=null?CUSTOMERS[filters.cust]:null;
   if(!c){el.innerHTML='';return;}
   var k=filters.csort||'safe';
-  el.innerHTML='<div class="custinfo"><div class="ci-h"><b>'+esc(c.n)+'</b><span class="catag">'+esc(c.t)+'</span></div>'+
+  el.innerHTML='<div class="custinfo"><div class="ci-h"><b>'+esc(c.n)+'</b><span class="catag">'+esc(c.t)+'</span><button class="ci-x" onclick="setCust(\'\')">ล้าง</button></div>'+
     '<div class="ci-spec">'+esc(specText(c))+'</div>'+
     '<div class="seg">'+['safe','value','stock','new'].map(function(x){return '<button class="'+(k===x?'on':'')+'" onclick="setCSort(\''+x+'\')">'+CSORT_LBL[x]+'</button>';}).join('')+'</div>'+
     '<div class="ci-hint">'+(k==='value'?'เรียงจาก Lot ที่ผ่านแบบพอดี ๆ ก่อน เพื่อเก็บ Lot ที่ค่าดีกว่าไว้ให้ลูกค้าที่เข้มงวดกว่า':k==='safe'?'เรียงจาก Lot ที่ค่าห่างขอบสเปกมากที่สุด เสี่ยงโดนปฏิเสธน้อยที่สุด':k==='stock'?'เรียงจาก Lot ที่คลังกรอกจำนวนตันคงเหลือมากที่สุด':'เรียงจาก Lot ที่บันทึก/แก้ไขล่าสุด')+'</div></div>';
