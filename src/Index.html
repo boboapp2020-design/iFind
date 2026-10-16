@@ -484,7 +484,7 @@ function go(scr,fromPop){
   ['home','role','history','settings'].forEach(function(s){$(s).classList.toggle('active',s===scr);});
   document.querySelectorAll('.ditem').forEach(function(n){n.classList.toggle('on',n.dataset.nav===scr);});
   $('hamb').style.display=(scr==='role'||scr==='home')?'none':'grid';
-  if(scr==='home') loadLatest();
+  if(scr==='home'){ loadLatest(); replayStats(); }
   if(scr==='history') loadHistory();
   if(scr==='settings') fillSettings();
   window.scrollTo(0,0);
@@ -587,13 +587,16 @@ function hstat(c,ic,label,n,unit,has){return '<div class="hstat '+c+'"><span cla
 function countUp(root){
   var still=window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;
   [].forEach.call(root.querySelectorAll('b[data-v]'),function(b){
-    var to=+b.getAttribute('data-v'),t0=null;
+    var to=+b.getAttribute('data-v'),t0=null,run=b._run=(b._run||0)+1;   // run: ยกเลิกรอบเก่าถ้าเริ่มวิ่งซ้ำ
     if(still){b.textContent=to.toLocaleString('en-US');return;}
-    (function step(ts){if(t0===null)t0=ts;var p=Math.min(1,(ts-t0)/900),e=1-Math.pow(1-p,3);
+    (function step(ts){if(b._run!==run)return;if(t0===null)t0=ts;var p=Math.min(1,(ts-t0)/900),e=1-Math.pow(1-p,3);
       b.textContent=Math.round(to*e).toLocaleString('en-US');if(p<1)requestAnimationFrame(step);})(performance.now());
   });
 }
 var HSTAT_KEY='';
+/* ให้ตัวเลขวิ่งใหม่ทุกครั้งที่กลับเข้าหน้าแรก / เปิดแอปกลับมา */
+function replayStats(){var el=$('hStats');if(el&&el.querySelector('b[data-v]'))countUp(el);}
+document.addEventListener('visibilitychange',function(){if(!document.hidden&&$('home')&&$('home').classList.contains('active'))replayStats();});
 function renderHomeStats(){
   var el=$('hStats');if(!el)return;
   var tot=RECORDS.length,stock=0,done=0;
